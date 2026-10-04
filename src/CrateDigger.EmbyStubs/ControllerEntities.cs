@@ -1,48 +1,65 @@
 namespace MediaBrowser.Controller.Entities
 {
-    /// <summary>
-    /// Query filter for library item lookups (shape modeled after InternalItemsQuery — verify).
-    /// </summary>
+    /// <summary>Query filter for library item lookups (verified members).</summary>
     public class InternalItemsQuery
     {
-        /// <summary>e.g. new[] { nameof(Audio) } to fetch only music tracks.</summary>
+        /// <summary>e.g. new[] { nameof(Audio.Audio) } to fetch only music tracks.</summary>
         public string[]? IncludeItemTypes { get; set; }
 
-        public Guid? UserId { get; set; }
+        public bool Recursive { get; set; } = true;
 
         public int? Limit { get; set; }
 
-        public bool Recursive { get; set; } = true;
+        public bool? IsVirtualItem { get; set; }
     }
 
-    /// <summary>Base type for everything the library manages.</summary>
+    /// <summary>Base type for everything the library manages (verified members).</summary>
     public class BaseItem
     {
         public Guid Id { get; set; }
 
+        /// <summary>
+        /// Int64 internal database id — the identifier PlaylistCreationRequest.ItemIdList
+        /// expects (NOT the public Guid).
+        /// </summary>
+        public long InternalId { get; set; }
+
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>Album title (Audio/Album items).</summary>
         public string Album { get; set; } = string.Empty;
 
-        /// <summary>Primary album artist display string.</summary>
-        public string AlbumArtist { get; set; } = string.Empty;
+        /// <summary>Verified as string[] (not List<string>).</summary>
+        public string[] Genres { get; set; } = Array.Empty<string>();
 
-        /// <summary>Per-track artist list.</summary>
-        public List<string> Artists { get; set; } = new();
-
-        /// <summary>Genre tags.</summary>
-        public List<string> Genres { get; set; } = new();
+        public string Path { get; set; } = string.Empty;
 
         public Guid ParentId { get; set; }
 
-        public bool IsFolder { get; set; }
+        public long? RunTimeTicks { get; set; }
     }
 
-    /// <summary>A music track.</summary>
-    public class Audio : BaseItem
+    /// <summary>Owning/acting user entity (PlaylistCreationRequest.User).</summary>
+    public class User
     {
-        /// <summary>Track length in ticks (100ns), if known.</summary>
-        public long RunTimeTicks { get; set; }
+        public Guid Id { get; set; }
+
+        public long InternalId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+    }
+}
+
+namespace MediaBrowser.Controller.Entities.Audio
+{
+    /// <summary>
+    /// A music track with artist metadata.
+    /// Verified namespace: MediaBrowser.Controller.Entities.Audio.Audio —
+    /// Artists/AlbumArtists live here (IHasArtist/IHasAlbumArtist), NOT on BaseItem.
+    /// </summary>
+    public class Audio : MediaBrowser.Controller.Entities.BaseItem
+    {
+        public string[] Artists { get; set; } = Array.Empty<string>();
+
+        public string[] AlbumArtists { get; set; } = Array.Empty<string>();
     }
 }

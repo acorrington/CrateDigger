@@ -1,5 +1,23 @@
-using MediaBrowser.Common;
+using MediaBrowser.Common.Configuration;
 using MediaBrowser.Model.Plugins;
+using MediaBrowser.Model.Serialization;
+
+namespace MediaBrowser.Common
+{
+    /// <summary>Root host providing services to plugins (minimal verified view).</summary>
+    public interface IApplicationHost
+    {
+        T Resolve<T>() where T : class;
+    }
+}
+
+namespace MediaBrowser.Common.Configuration
+{
+    /// <summary>Application path facts injected into plugin constructors.</summary>
+    public interface IApplicationPaths
+    {
+    }
+}
 
 namespace MediaBrowser.Common.Plugins
 {
@@ -7,33 +25,34 @@ namespace MediaBrowser.Common.Plugins
     public interface IPlugin
     {
         Guid Id { get; }
+
         string Name { get; }
+
         string Description { get; }
     }
 
     /// <summary>
-    /// Convenience base class handling configuration loading/saving.
-    /// The real implementation persists <see cref="Configuration"/> to
-    /// programdata\plugins\configurations\{Name}.xml.
+    /// Verified against 4.10.1.0:
+    ///   protected BasePlugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
+    ///   Name = virtual abstract; Id/Description = virtual; Configuration = get/set.
     /// </summary>
     public abstract class BasePlugin<TConfiguration> : IPlugin
         where TConfiguration : class, IPluginConfiguration, new()
     {
-        protected BasePlugin(IApplicationHost applicationHost, ILogger logger)
+        protected BasePlugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
         {
-            ApplicationHost = applicationHost;
-            Logger = logger;
+            ApplicationPaths = applicationPaths;
+            XmlSerializer = xmlSerializer;
             Configuration = new TConfiguration();
         }
 
-        public IApplicationHost ApplicationHost { get; }
+        public IApplicationPaths ApplicationPaths { get; }
 
-        public ILogger Logger { get; }
+        public IXmlSerializer XmlSerializer { get; }
 
-        /// <summary>Live configuration; mutations are saved via the Dashboard.</summary>
+        /// <summary>Live configuration; persisted by the server on update.</summary>
         public TConfiguration Configuration { get; set; }
 
-        /// <summary>Stable plugin identity. Override for a fixed GUID (used by config-page JS).</summary>
         public virtual Guid Id { get; } = Guid.NewGuid();
 
         public abstract string Name { get; }

@@ -76,8 +76,9 @@
     <Message Importance="high" Text="CrateDigger: merged CrateDigger.Core into $(AssemblyName).dll (single-DLL plugin)" />
   </Target>
 
-  <!-- Deploy the merged single DLL to the Emby plugins folder when it exists. -->
-  <Target Name="CopyPluginToEmby" AfterTargets="MergeCoreWithILRepack" Condition="Exists('$(EmbyPluginsDir)') And Exists('$(TargetPath)')">
+  <!-- Deploy only REAL (Emby-referencing, ILRepack-merged) builds — a stub build must
+       never land in a live plugins folder. -->
+  <Target Name="CopyPluginToEmby" AfterTargets="MergeCoreWithILRepack" Condition="'$(UseRealEmby)' == 'true' And Exists('$(EmbyPluginsDir)') And Exists('$(TargetPath)')">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(EmbyPluginsDir)" SkipUnchangedFiles="false" />
     <Message Importance="high" Text="CrateDigger: copied $(AssemblyName).dll to $(EmbyPluginsDir)" />
   </Target>

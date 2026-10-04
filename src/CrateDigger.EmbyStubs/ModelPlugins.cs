@@ -1,23 +1,26 @@
 // ---------------------------------------------------------------------------
-// COMPILE-TIME STAND-INS FOR THE EMBY SERVER PLUGIN API.
+// COMPILE-TIME STAND-INS FOR THE EMBY SERVER PLUGIN API (Emby 4.10.1.0).
 //
-// These types mirror the shape of the real MediaBrowser.*.dll assemblies so the
-// plugin can be developed on machines without an Emby installation. When the
-// real DLLs are dropped into lib\, CrateDigger.Plugin references those instead
-// and any signature drift is reported as a compile error (see docs/api-surface.md).
-//
-// Plausibility notes (verify against the real DLLs, ILSpy/dotPeek):
-//   * IPlugin/BasePlugin      -> MediaBrowser.Common.Plugins
-//   * IHasWebPages/PluginPage -> MediaBrowser.Model.Plugins
-//   * IServerEntryPoint       -> MediaBrowser.Controller.Plugins
-//   * IRestfulService + Route -> MediaBrowser.Common.Api (EXACT namespace/verb
-//     mechanism is the biggest unknown — Emby is closed-source and version-specific)
+// These types mirror the VERIFIED shapes documented in docs/api-surface.md
+// (confirmed by compiling against the real MediaBrowser.*.dll, reflection
+// probes in tools/EmbyApiProbe, first-party plugin decompiles, and the
+// official docs at dev.emby.media). When the real DLLs are dropped into lib\,
+// CrateDigger.Plugin references those instead and any drift is a compile error.
 // ---------------------------------------------------------------------------
 
 namespace MediaBrowser.Model.Plugins
 {
-    /// <summary>Marker for plugin configuration objects persisted as XML by the server.</summary>
+    /// <summary>Marker for persisted plugin configuration (real BasePlugin<T> constrains on it).</summary>
     public interface IPluginConfiguration
+    {
+    }
+
+    /// <summary>
+    /// Base class for persisted plugin settings; the real server serializes
+    /// derived types to programdata\configurations\{Name}.xml.
+    /// Real linkage: BasePluginConfiguration implements IPluginConfiguration.
+    /// </summary>
+    public class BasePluginConfiguration : IPluginConfiguration
     {
     }
 
@@ -27,29 +30,31 @@ namespace MediaBrowser.Model.Plugins
         IEnumerable<PluginPageInfo> GetPages();
     }
 
-    /// <summary>Describes one embedded HTML page served by the plugin.</summary>
+    /// <summary>Describes one embedded HTML/JS page served by the plugin.</summary>
     public class PluginPageInfo
     {
-        /// <summary>Internal page name (used in URLs/lookups).</summary>
+        /// <summary>Internal page name (web/ConfigurationPage?name=...).</summary>
         public string Name { get; set; } = string.Empty;
 
         /// <summary>Human-readable title.</summary>
         public string? DisplayName { get; set; }
 
-        /// <summary>Show the page in the main Dashboard menu.</summary>
+        /// <summary>
+        /// Full embedded-resource name, e.g. "CrateDigger.Plugin.Resources.configPage.html".
+        /// Verified property name: EmbeddedResourcePath (NOT EmbeddedResourceName).
+        /// </summary>
+        public string? EmbeddedResourcePath { get; set; }
+
         public bool EnableInMainMenu { get; set; }
+
+        public bool EnableInUserMenu { get; set; }
 
         public string? MenuSection { get; set; }
 
         public string? MenuIcon { get; set; }
 
-        /// <summary>
-        /// Assembly-qualified name of the embedded HTML resource,
-        /// e.g. "CrateDigger.Plugin.Resources.configPage.html".
-        /// </summary>
-        public string? EmbeddedResourceName { get; set; }
+        public string? FeatureId { get; set; }
 
-        /// <summary>Alternative: resource holding only the configuration fragment.</summary>
-        public string? ConfigHtmlResourceName { get; set; }
+        public bool IsMainConfigPage { get; set; }
     }
 }

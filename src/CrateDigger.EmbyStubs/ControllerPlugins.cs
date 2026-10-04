@@ -1,12 +1,11 @@
 namespace MediaBrowser.Controller.Plugins
 {
     /// <summary>
-    /// Long-lived object started by the server after all plugins load.
+    /// Verified against 4.10.1.0: void Run() + IDisposable
+    /// (NOT RunAsync — that was an early guess, corrected by probe).
     /// </summary>
-    public interface IServerEntryPoint
+    public interface IServerEntryPoint : IDisposable
     {
-        Task RunAsync();
-
-        void Dispose();
+        void Run();
     }
 }
