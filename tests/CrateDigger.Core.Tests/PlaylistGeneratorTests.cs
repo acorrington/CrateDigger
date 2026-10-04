@@ -129,6 +129,36 @@ public class PlaylistGeneratorTests
         Assert.Single(result.PlaylistTracks);
     }
 
+    [Fact]
+    public async Task UnparseableFirstReply_RetriesOnceWithReinforcedPrompt()
+    {
+        var llm = new FakeLlm(
+            "I am afraid I cannot produce a playlist right now.",        // prose-only failure
+            """{"tracks": [{"artist": "Kraftwerk", "title": "The Robots"}]}""");
+        var generator = new PlaylistGenerator(llm);
+
+        var result = await generator.GenerateAsync("robot funk", Library(), Options, new GenerationOptions());
+
+        Assert.Equal(2, llm.Requests.Count); // first attempt + reinforced retry
+        Assert.Single(result.PlaylistTracks);
+        var retrySystem = llm.Requests[1].Messages.Last();
+        Assert.Equal("system", retrySystem.Role);
+        Assert.Contains("ONLY the raw JSON", retrySystem.Content);
+    }
+
+    [Fact]
+    public async Task BothRepliesUnparseable_SurfacesBothErrors()
+    {
+        var llm = new FakeLlm("no json", "still no json");
+        var generator = new PlaylistGenerator(llm);
+
+        var ex = await Assert.ThrowsAsync<LlmParseException>(() =>
+            generator.GenerateAsync("x", Library(), Options, new GenerationOptions()));
+
+        Assert.Contains("both attempts", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(2, llm.Requests.Count);
+    }
+
     private sealed class SynchronousProgress(List<GenerationStage> sink) : IProgress<GenerationStage>
     {
         public void Report(GenerationStage value) => sink.Add(value);

@@ -86,7 +86,7 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             config.LlmTimeoutSeconds = parseInt(view.querySelector('.cdTimeout').value, 10) || 300;
             config.LlmMaxTokens = parseInt(view.querySelector('.cdMaxTokens').value, 10);
             if (isNaN(config.LlmMaxTokens)) {
-                config.LlmMaxTokens = 8192;
+                config.LlmMaxTokens = 16384;
             }
             config.LlmExtraJson = (view.querySelector('.cdExtraJson').value || '').trim();
             try {
@@ -120,7 +120,7 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             view.querySelector('.cdThreshold').value =
                 typeof config.MatchThreshold === 'number' ? config.MatchThreshold : 0.75;
             view.querySelector('.cdTimeout').value = config.LlmTimeoutSeconds || 300;
-            view.querySelector('.cdMaxTokens').value = typeof config.LlmMaxTokens === 'number' ? config.LlmMaxTokens : 8192;
+            view.querySelector('.cdMaxTokens').value = typeof config.LlmMaxTokens === 'number' ? config.LlmMaxTokens : 16384;
             view.querySelector('.cdExtraJson').value = config.LlmExtraJson || '';
         }, responseHelper.handleErrorResponse);
     };

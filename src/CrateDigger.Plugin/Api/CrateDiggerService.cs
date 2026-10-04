@@ -149,8 +149,14 @@ public class CrateDiggerService : IService, IRequiresRequest
             _logger.ErrorException(
                 $"Job {jobId}: LLM returned unparseable output ({ex.Message}). Raw payload: [{payload}]",
                 ex);
-            GenerationJobStore.Fail(jobId,
-                "The model returned an unexpected response format. Try again, or switch models in settings.");
+
+            var uiMessage = ex.Message.Contains("end of data", StringComparison.OrdinalIgnoreCase) ||
+                            ex.Message.Contains("token limit", StringComparison.OrdinalIgnoreCase) ||
+                            ex.Message.Contains("Second:", StringComparison.Ordinal)
+                ? "The model's reply was unusable — often a cut-off at the output token cap. " +
+                  "Raise 'Max output tokens' in settings (e.g. 16384) and try again, or retry with a simpler prompt."
+                : "The model returned an unexpected response format. Try again, or switch models in settings.";
+            GenerationJobStore.Fail(jobId, uiMessage);
         }
         catch (LlmException ex)
         {

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using CrateDigger.Core.Models;
 
 namespace CrateDigger.Core.Llm;
@@ -46,6 +47,11 @@ public static class ResponseParser
         }
         catch (JsonException ex)
         {
+            // Truncated response (hit max_tokens mid-JSON) — salvage complete track
+            // objects instead of failing the whole generation.
+            var salvaged = TrySalvageTracklist(raw);
+            if (salvaged != null)
+                return salvaged;
             throw new LlmParseException($"Could not parse LLM JSON: {ex.Message}", raw, ex);
         }
     }
@@ -82,6 +88,9 @@ public static class ResponseParser
         }
         catch (JsonException ex)
         {
+            var salvaged = TrySalvageArtists(raw);
+            if (salvaged != null)
+                return salvaged;
             throw new LlmParseException($"Could not parse LLM artist JSON: {ex.Message}", raw, ex);
         }
     }
@@ -276,6 +285,115 @@ public static class ResponseParser
         }
         value = default;
         return false;
+    }
+
+    // ------------------------------------------------------------------
+    // Truncation salvage: when the model hits the output token cap mid-JSON,
+    // the response dies with a JsonException but earlier entries are complete
+    // and usable. Real case (v0.1.5): payload ended at `"artist]` mid-key —
+    // salvaging kept the 3 finished tracks instead of failing the job.
+    // ------------------------------------------------------------------
+
+    /// <summary>Best-effort tracklist recovery from a truncated/malformed payload; null when nothing usable.</summary>
+    internal static LlmTracklist? TrySalvageTracklist(string raw)
+    {
+        try
+        {
+            var json = ExtractJson(raw, out var notes);
+
+            var nameMatch = Regex.Match(json, "\"name\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+            var name = nameMatch.Success ? UnescapeJsonString(nameMatch.Groups[1].Value) : null;
+
+            var tracks = new List<TrackRef>();
+            foreach (var objText in CompleteObjects(json))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(objText);
+                    var el = doc.RootElement;
+                    if (el.ValueKind != JsonValueKind.Object)
+                        continue;
+                    // Skip container objects (the truncated root / wrapper arrays).
+                    if (el.TryGetPropertyInsensitive("tracks", out _) ||
+                        el.TryGetPropertyInsensitive("artists", out _))
+                        continue;
+                    var track = ParseTrack(el);
+                    if (track != null)
+                        tracks.Add(track);
+                }
+                catch (JsonException)
+                {
+                    // Partial nested object — skip, keep scanning.
+                }
+            }
+
+            var deduped = DeDupe(tracks);
+            return deduped.Count == 0 ? null : new LlmTracklist(name, deduped, notes);
+        }
+        catch (LlmParseException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Best-effort artist-list recovery from a truncated payload.</summary>
+    internal static IReadOnlyList<string>? TrySalvageArtists(string raw)
+    {
+        try
+        {
+            var json = ExtractJson(raw, out _);
+            var strings = Regex.Matches(json, "\"((?:[^\"\\\\]|\\\\.)*)\"")
+                .Select(m => UnescapeJsonString(m.Groups[1].Value))
+                .Where(s => !string.IsNullOrWhiteSpace(s) &&
+                            !string.Equals(s, "artists", StringComparison.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            return strings.Count == 0 ? null : strings;
+        }
+        catch (LlmParseException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Enumerate complete balanced {...} substrings. When a container is unterminated
+    /// (truncation), advance one char instead of stopping so completed NESTED objects
+    /// inside it are still found.
+    /// </summary>
+    private static IEnumerable<string> CompleteObjects(string text)
+    {
+        var i = 0;
+        while (i < text.Length)
+        {
+            if (text[i] != '{')
+            {
+                i++;
+                continue;
+            }
+
+            var end = IndexOfJsonEnd(text, i);
+            if (end < 0)
+            {
+                i++; // truncated at/past here — look deeper for completed nested objects
+                continue;
+            }
+
+            yield return text.Substring(i, end - i + 1);
+            i = end + 1;
+        }
+    }
+
+    private static string UnescapeJsonString(string value)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<string>("\"" + value.Replace("\"", "\\\"") + "\"") ?? value;
+        }
+        catch (JsonException)
+        {
+            return value;
+        }
     }
 
     private static IReadOnlyList<TrackRef> DeDupe(IReadOnlyList<TrackRef> tracks)

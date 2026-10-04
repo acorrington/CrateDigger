@@ -65,8 +65,8 @@ public sealed class PlaylistGenerator
         progress?.Report(GenerationStage.Thinking);
 
         var request = _promptBuilder.BuildTrackRequest(prompt, workingSet, options.MaxTracks);
-        var raw = await _llm.CompleteAsync(request, llmOptions, cancellationToken).ConfigureAwait(false);
-        var tracklist = ResponseParser.ParseTracklist(raw);
+        var tracklist = await CompleteAndParseAsync(request, llmOptions, ResponseParser.ParseTracklist, cancellationToken)
+            .ConfigureAwait(false);
 
         progress?.Report(GenerationStage.MatchingTracks);
 
@@ -85,5 +85,44 @@ public sealed class PlaylistGenerator
                 "Try a different prompt, or lower the match threshold.");
 
         return new GenerationResult(tracklist.PlaylistName, report, playlistTracks);
+    }
+
+    private const string ReinforcedInstruction =
+        "CRITICAL REMINDER: output ONLY the raw JSON object described earlier. " +
+        "No commentary, no reasoning, no explanations — your reply must start with { and end with }.";
+
+    /// <summary>
+    /// One LLM call + parse; if parsing fails even after the parser's truncation
+    /// salvage, retry ONCE with a reinforced system instruction (model output is
+    /// non-deterministic — prose-only replies usually become clean JSON on retry).
+    /// </summary>
+    private async Task<T> CompleteAndParseAsync<T>(
+        LlmRequest request,
+        LlmOptions options,
+        Func<string, T> parse,
+        CancellationToken cancellationToken)
+    {
+        var raw = await _llm.CompleteAsync(request, options, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return parse(raw);
+        }
+        catch (LlmParseException first)
+        {
+            var reinforced = new LlmRequest(
+                request.Messages.Append(new LlmMessage("system", ReinforcedInstruction)).ToList());
+            var raw2 = await _llm.CompleteAsync(reinforced, options, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return parse(raw2);
+            }
+            catch (LlmParseException second)
+            {
+                throw new LlmParseException(
+                    $"Parsing failed on both attempts. First: {first.Message} Second: {second.Message}",
+                    second.RawPayload ?? raw2,
+                    second);
+            }
+        }
     }
 }

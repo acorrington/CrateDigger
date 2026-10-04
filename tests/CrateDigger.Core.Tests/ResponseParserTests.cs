@@ -141,4 +141,46 @@ public class ResponseParserTests
     {
         Assert.Throws<LlmParseException>(() => ResponseParser.ParseArtists("no artists today"));
     }
+
+    // ------------------------------------------------------------------
+    // Truncation salvage (v0.1.5 — real production payload that ended mid-key)
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void TruncatedMidKey_SalvagesCompleteTracks()
+    {
+        // Verbatim shape from the amc-media failure: JSON sliced at `"artist]` by max_tokens.
+        const string raw = """
+            {"name": "Depeche Mode Radio", "tracks": [
+            {"artist": "Depeche Mode", "title": "World in My Eyes"},
+            {"artist": "Depeche Mode", "title": "It’s No Good"},
+            {"artist": "Depeche Mode", "title": "Dangerous"},
+            {"artist"
+            """;
+
+        var result = ResponseParser.ParseTracklist(raw);
+
+        Assert.Equal("Depeche Mode Radio", result.PlaylistName);
+        Assert.Equal(3, result.Tracks.Count);
+        Assert.Equal("World in My Eyes", result.Tracks[0].Title);
+    }
+
+    [Fact]
+    public void TruncatedSingleTrack_NothingSalvageable_Throws()
+    {
+        const string raw = """{"name": "X", "tracks": [{"art""";
+        Assert.Throws<LlmParseException>(() => ResponseParser.ParseTracklist(raw));
+    }
+
+    [Fact]
+    public void TruncatedArtistList_SalvagesCompleteNames()
+    {
+        const string raw = """{"artists": ["Depeche Mode", "Kraftwerk", "Nin""";
+
+        var artists = ResponseParser.ParseArtists(raw);
+
+        Assert.Equal(2, artists.Count);
+        Assert.Contains("Depeche Mode", artists);
+        Assert.Contains("Kraftwerk", artists);
+    }
 }

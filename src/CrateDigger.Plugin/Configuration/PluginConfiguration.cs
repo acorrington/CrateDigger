@@ -35,8 +35,10 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Cap on generated tokens. Local servers often default to unlimited output —
     /// a runaway generation would hang until the timeout. 0 = no cap.
+    /// 16384 since v0.1.5: 8192 proved too small when qwen reasoned its way through
+    /// a long tracklist — truncation mid-JSON (observed live: cut at `"artist]`).
     /// </summary>
-    public int LlmMaxTokens { get; set; } = 8192;
+    public int LlmMaxTokens { get; set; } = 16384;
 
     /// <summary>
     /// Raw JSON merged into the LLM request body for server-specific options, e.g.
