@@ -1,8 +1,15 @@
 # CrateDigger
 
+[![CI](https://github.com/acorrington/CrateDigger/actions/workflows/ci.yml/badge.svg)](https://github.com/acorrington/CrateDigger/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/acorrington/CrateDigger)](https://github.com/acorrington/CrateDigger/releases)
+
 **AI playlist generator plugin for Emby Server.** Describe a vibe in plain English —
 CrateDigger digs the matching tracks out of your local music library with an LLM and
 builds a native Emby playlist.
+
+> **Quick install:** download `CrateDigger.dll` from [Releases](https://github.com/acorrington/CrateDigger/releases),
+> copy it into `%AppData%\Emby-Server\programdata\plugins\`, restart Emby, then open
+> **Dashboard → Plugins → CrateDigger**.
 
 > "Crate digging" — flipping through record crates to find the perfect tracks. CrateDigger
 > does that for your library, only the crate is your entire collection and the DJ is an AI.
@@ -52,17 +59,19 @@ CrateDigger.slnx
 
 ```powershell
 dotnet build CrateDigger.slnx        # builds against stubs if lib/ is empty
-dotnet test  CrateDigger.slnx        # 43 unit tests
+dotnet test  tests/CrateDigger.Core.Tests    # 50 unit tests
 ```
 
 The plugin project **auto-switches** its references: with `MediaBrowser.Controller.dll`,
 `MediaBrowser.Model.dll` and `MediaBrowser.Common.dll` present in `lib\` it compiles
 against the real Emby API; without them it compiles against `CrateDigger.EmbyStubs`.
-Deploying therefore requires one build with the real DLLs in place.
+Deploying (and cutting releases) therefore requires a machine with Emby installed —
+that's why CI runs tests in stub mode while `tools/release.ps1` builds the shipped DLL.
 
 ### Deploy
 
-Copy `CrateDigger.dll` + `CrateDigger.Core.dll` to:
+Copy the single merged **`CrateDigger.dll`** (ILRepack folds `CrateDigger.Core` into it —
+Emby's isolated plugin load contexts can't resolve sibling DLLs) to:
 
 ```
 %AppData%\Emby-Server\programdata\plugins\
@@ -70,6 +79,12 @@ Copy `CrateDigger.dll` + `CrateDigger.Core.dll` to:
 
 and restart Emby Server. (The build auto-copies when that folder exists.) Verify under
 **Dashboard → Plugins**, page **CrateDigger**.
+
+### Release (maintainers, machine with Emby installed)
+
+```powershell
+pwsh -File tools/release.ps1          # tests -> Release build -> tag -> gh release + DLL
+```
 
 ## Configuration
 
