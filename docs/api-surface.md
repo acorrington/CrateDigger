@@ -34,6 +34,7 @@ Sources of truth used during discovery:
 | 16 | Request body binding | service DTO bodies bind **`application/x-www-form-urlencoded`** reliably; plain `application/json` bodies did NOT bind on this server build (verified on `/Users/AuthenticateByName` and `/CrateDigger/Create`), while `/Plugins/{id}/Configuration` accepts JSON. Frontend uses form-encoding. | ✅ empirically |
 | 17 | Dashboard page discovery | `GET /web/ConfigurationPages` lists plugin pages (built from `IHasWebPages.GetPages()` via `WebAppService.GetPluginPages`); `GET /web/ConfigurationPage?name=cratedigger` serves the HTML. Plugins → CrateDigger → Settings works; `EnableInMainMenu=true` also adds the Settings-menu entry. | ✅ curl-verified |
 | 18 | Client auth for tests | `POST /Users/AuthenticateByName` with header `Authorization: MediaBrowser Client="..", Device="..", DeviceId="..", Version=".."` and **form-encoded** `Username`/`Pw` (JSON body does not bind) → `AccessToken`; send as `X-Emby-Token` | ✅ |
+| 19 | Plugins-page thumbnail | implement `MediaBrowser.Common.Plugins.IHasThumbImage` on the plugin class: `ImageFormat ThumbImageFormat` (`MediaBrowser.Model.Drawing.ImageFormat.Png`) + `Stream GetThumbImage()` returning an embedded resource. The handler has **no null-guard** — without the interface `GET /Plugins/{Id}/Thumb` returns **500 NRE** (verified live); first-party plugins (MBBackup) implement it and embed `{Namespace}.thumb.png` | ✅ 200 image/png |
 
 ## Environment facts
 
