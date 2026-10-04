@@ -59,13 +59,13 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
     /// cache-busting query only reflects the SERVER version, so plugin updates keep the same
     /// URL and stale browser copies can linger. Bump these names (and the matching
     /// data-controller in configPage.html) on releases when cache issues appear.
-    /// Current generation: v2.
+    /// Current generation: v4 (raw-Response parse fix: Create now sends dataType:'json').
     /// </summary>
     public IEnumerable<PluginPageInfo> GetPages()
     {
         yield return new PluginPageInfo
         {
-            Name = "cratedigger2",
+            Name = "cratedigger4",
             DisplayName = "CrateDigger",
             EnableInMainMenu = true,
             MenuSection = "settings",
@@ -75,7 +75,7 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
 
         yield return new PluginPageInfo
         {
-            Name = "cratediggerjs2",
+            Name = "cratediggerjs4",
             EmbeddedResourcePath = GetType().Namespace + ".Resources.configPage.js",
         };
     }

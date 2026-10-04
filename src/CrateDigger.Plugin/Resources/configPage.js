@@ -33,6 +33,12 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
         } catch (err) { /* no console */ }
     }
 
+    function errText(err) {
+        if (!err) return 'unknown error';
+        if (err.status) return 'HTTP ' + err.status + (err.statusText ? ' ' + err.statusText : '');
+        return err.message || String(err);
+    }
+
     // ApiClient.ajax may hand back the raw response string instead of a parsed
     // object — normalize defensively (this bit us once: resp.JobId was undefined,
     // so no status poll ever started and the button stayed disabled).
@@ -185,11 +191,15 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
         // NOTE: form-encode the body — Emby's service layer binds
         // application/x-www-form-urlencoded reliably (plain JSON bodies
         // do not bind on this server build).
+        // dataType:'json' is CRITICAL: without it ApiClient.fetch resolves with
+        // the raw Response object (verified in modules/emby-apiclient/apiclient.js)
+        // for application/json responses — resp.JobId would be undefined.
         ApiClient.ajax({
             type: 'POST',
             url: ApiClient.getUrl('CrateDigger/Create'),
             data: 'Prompt=' + encodeURIComponent(prompt),
-            contentType: 'application/x-www-form-urlencoded; charset=UTF-8'
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json'
         }).then(function (resp) {
             loading.hide();
             log('Create response type:', typeof resp, 'value:', resp);
@@ -205,7 +215,7 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             loading.hide();
             log('Create FAILED:', err);
             instance.setGenerating(false);
-            instance.showPanel('error', 'Request failed: ' + (err && err.message ? err.message : err));
+            instance.showPanel('error', 'Request failed: ' + errText(err));
         });
     };
 
@@ -236,10 +246,11 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             try {
                 var url = ApiClient.getUrl('CrateDigger/Status', { jobId: jobId });
                 log('poll:', url);
-                // getJSON parses the body; fall back to ajax + manual parse.
+                // getJSON already sets dataType:'json'; the manual fallback must too
+                // (otherwise fetch resolves with the raw Response object).
                 var request = ApiClient.getJSON
                     ? ApiClient.getJSON(url)
-                    : ApiClient.ajax({ type: 'GET', url: url });
+                    : ApiClient.ajax({ type: 'GET', url: url, dataType: 'json' });
 
                 request.then(function (raw) {
                     try {
