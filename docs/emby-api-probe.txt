@@ -1,0 +1,503 @@
+
+=== BasePlugin<T> (MediaBrowser.Common.Plugins) ===
+  protected BasePlugin`1(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
+  Guid Id { get: virtual=True abstract=False }
+  String Name { get: virtual=True abstract=True }
+  String Description { get: virtual=True abstract=False }
+  TConfigurationType Configuration { get: virtual=False abstract=False }
+
+=== BasePlugin (non-generic) ===
+  protected BasePlugin()
+  String Name { get; }
+  String Description { get; }
+  Guid Id { get; set; }
+  Version Version { get; set; }
+  String AssemblyFilePath { get; set; }
+  String DataFolderPath { get; set; }
+
+=== IServerEntryPoint ===
+  interfaces: System.IDisposable
+  Void Run()
+
+=== IHasWebPages ===
+  IEnumerable`1 GetPages()
+
+=== PluginPageInfo ===
+  String Name { get; set; }
+  String DisplayName { get; set; }
+  String EmbeddedResourcePath { get; set; }
+  Boolean EnableInMainMenu { get; set; }
+  Boolean EnableInUserMenu { get; set; }
+  String MenuSection { get; set; }
+  String FeatureId { get; set; }
+  String MenuIcon { get; set; }
+  Boolean IsMainConfigPage { get; set; }
+
+=== IService ===
+
+=== RouteAttribute ===
+  public RouteAttribute(String path)
+  public RouteAttribute(String path, String verbs)
+  String Path { get; set; }
+  String Summary { get; set; }
+  String Description { get; set; }
+  Boolean IsHidden { get; set; }
+  String Notes { get; set; }
+  String Verbs { get; set; }
+  Int32 Priority { get; set; }
+  Object TypeId { get; }
+
+=== ILibraryManager candidates ===
+  -- MediaBrowser.Controller.Library.ILibraryManager
+  List`1 GetItemLinks(Int64 itemId, List`1 types, CancellationToken cancellationToken)
+  List`1 GetItemLinks(Int64 itemId, List`1 types, IDataContext dataContext, CancellationToken cancellationToken)
+  BaseItem GetItemById(Guid id)
+  BaseItem GetItemById(Guid id, IDataContext dataContext)
+  BaseItem GetItemById(Int64 id)
+  BaseItem GetItemById(Int64 id, IDataContext dataContext)
+  List`1 GetItemPeople(BaseItem item)
+  List`1 GetItemPeople(InternalPeopleQuery query)
+  Guid[] GetItemIds(InternalItemsQuery query)
+  BaseItem[] GetItemList(InternalItemsQuery query)
+  BaseItem[] GetItemList(InternalItemsQuery query, CancellationToken cancellationToken)
+  BaseItem[] GetItemList(InternalItemsQuery query, IDataContext dataContext, CancellationToken cancellationToken)
+  BaseItem[] GetItemList(InternalItemsQuery query, Boolean obsoleteParam)
+  QueryResult`1 GetItemsResult(InternalItemsQuery query)
+  QueryResult`1 GetItemsResult(InternalItemsQuery query, CancellationToken cancellationToken)
+  QueryResult`1 GetItemsResult(InternalItemsQuery query, IDataContext dataContext, CancellationToken cancellationToken)
+  String[] GetItemTypes(InternalItemsQuery query, CancellationToken cancellationToken)
+  BaseItem GetItemById(String itemId, String mediaSourceId)
+
+=== IPlaylistManager (CreatePlaylist area) ===
+  Task`1 CreatePlaylist(PlaylistCreationRequest options)
+
+=== MediaBrowser.Controller.Playlists.PlaylistCreationRequest ===
+  String Name { get; set; }
+  Int64[] ItemIdList { get; set; }
+  String MediaType { get; set; }
+  User User { get; set; }
+  Boolean IsPublic { get; set; }
+  public PlaylistCreationRequest()
+
+=== MediaBrowser.Controller.Playlists.PlaylistCreationResult ===
+  String Id { get; set; }
+  String Name { get; set; }
+  Int32 ItemAddedCount { get; set; }
+  public PlaylistCreationResult()
+
+=== BaseItem music fields ===
+  String Album { get=Y set=Y }
+  String Name { get=Y set=Y }
+  Guid Id { get=Y set=Y }
+  String Path { get=Y set=Y }
+  String SortName { get=Y set=Y }
+  String[] Genres { get=Y set=Y }
+  Nullable`1 RunTimeTicks { get=Y set=Y }
+  Audio type exists: True
+
+=== InternalItemsQuery key props ===
+  Boolean Recursive
+  Nullable`1 Limit
+  String[] IncludeItemTypes
+  Nullable`1 IsVirtualItem
+
+=== Types with 'Log' in name (these DLLs) ===
+  MediaBrowser.Model.System.LogFile
+  MediaBrowser.Model.Plugins.UI.Views.IPluginDialogView
+  MediaBrowser.Model.Plugins.UI.Views.Enums.DialogAction
+  MediaBrowser.Model.Plugins.UI.Views.Enums.DialogSize
+  MediaBrowser.Model.Logging.ILogger
+  MediaBrowser.Model.Logging.ILogManager
+  MediaBrowser.Model.Logging.LogHelper
+  MediaBrowser.Model.Logging.LogSeverity
+  MediaBrowser.Model.Logging.NullLogger
+  MediaBrowser.Model.Activity.ActivityLogEntry
+
+=== Emby system folder: logging/server DLLs ===
+  Emby.ActivityLog.dll
+  Emby.Server.Connect.dll
+  Emby.Server.Implementations.dll
+  Emby.Server.MediaEncoding.dll
+  Emby.Server.Sync.dll
+  Emby.Server.Updater.dll
+  EmbyServer.dll
+  Microsoft.AspNetCore.Components.Server.dll
+  Microsoft.AspNetCore.Hosting.Server.Abstractions.dll
+  Microsoft.AspNetCore.HttpLogging.dll
+  Microsoft.AspNetCore.Server.HttpSys.dll
+  Microsoft.AspNetCore.Server.IIS.dll
+  Microsoft.AspNetCore.Server.IISIntegration.dll
+  Microsoft.AspNetCore.Server.Kestrel.Core.dll
+  Microsoft.AspNetCore.Server.Kestrel.dll
+  Microsoft.AspNetCore.Server.Kestrel.Transport.NamedPipes.dll
+  Microsoft.AspNetCore.Server.Kestrel.Transport.Quic.dll
+  Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.dll
+  Microsoft.Extensions.Logging.Abstractions.dll
+  Microsoft.Extensions.Logging.Configuration.dll
+  Microsoft.Extensions.Logging.Console.dll
+  Microsoft.Extensions.Logging.Debug.dll
+  Microsoft.Extensions.Logging.dll
+  Microsoft.Extensions.Logging.EventLog.dll
+  Microsoft.Extensions.Logging.EventSource.dll
+  Microsoft.Extensions.Logging.TraceSource.dll
+  Microsoft.IdentityModel.Logging.dll
+  System.Diagnostics.EventLog.dll
+  System.Diagnostics.EventLog.Messages.dll
+
+=== MediaBrowser.Controller references ===
+  netstandard
+  MediaBrowser.Model
+  MediaBrowser.Common
+  Emby.Naming
+  System.Memory
+  Emby.Web.GenericEdit
+  Emby.Media.Model
+  System.IO.Pipelines
+
+=== MediaBrowser.Common references ===
+  netstandard
+  MediaBrowser.Model
+  System.Memory
+
+=== IApplicationHost methods (plugin/service relevant) ===
+  String get_OperatingSystemDisplayName()
+  String get_Name()
+  String get_SystemId()
+  Void add_ApplicationUpdated(EventHandler`1 value)
+  Void remove_ApplicationUpdated(EventHandler`1 value)
+  Boolean get_HasPendingRestart()
+  Boolean get_IsShuttingDown()
+  Boolean get_IsStartupComplete()
+  Boolean get_CanSelfRestart()
+  Void add_HasPendingRestartChanged(EventHandler value)
+  Void remove_HasPendingRestartChanged(EventHandler value)
+  Void NotifyPendingRestart()
+  Void Restart()
+  Version get_ApplicationVersion()
+  Boolean get_CanSelfUpdate()
+  IEnumerable`1 GetExports(Boolean manageLiftime)
+  Task`1 CheckForApplicationUpdate(CancellationToken cancellationToken, Boolean isInBackground, IProgress`1 progress)
+  Task UpdateApplication(PackageVersionInfo package, CancellationToken cancellationToken, IProgress`1 progress)
+  T Resolve()
+  T TryResolve()
+  Task Shutdown()
+  IPlugin[] get_Plugins()
+  Void RemovePlugin(IPlugin plugin)
+  Void Init()
+  Object CreateInstance(Type type)
+  PackageVersionClass get_SystemUpdateLevel()
+  Boolean ContainsStartupOption(String name)
+  (ApplicationHost concrete class in these DLLs: none — lives in Emby.Server.Implementations)
+
+=== MediaBrowser.Model.Logging.ILogger ===
+  MediaBrowser.Model.Logging.ILogger
+  Void Info(String message, Object[] paramList)
+  Void Error(String message, Object[] paramList)
+  Void Warn(String message, Object[] paramList)
+  Void Debug(String message, Object[] paramList)
+  Void Fatal(String message, Object[] paramList)
+  Void FatalException(String message, Exception exception, Object[] paramList)
+  Void ErrorException(String message, Exception exception, Object[] paramList)
+  Void LogMultiline(String message, LogSeverity severity, StringBuilder additionalContent)
+  Void Log(LogSeverity severity, String message, Object[] paramList)
+  Void Log(LogSeverity severity, ReadOnlyMemory`1 message)
+  Void Error(ReadOnlyMemory`1 message)
+  Void Warn(ReadOnlyMemory`1 message)
+  Void Info(ReadOnlyMemory`1 message)
+  Void Debug(ReadOnlyMemory`1 message)
+
+=== ILogManager ===
+  LogSeverity get_LogSeverity()
+  Void set_LogSeverity(LogSeverity value)
+  String get_ExceptionMessagePrefix()
+  Void set_ExceptionMessagePrefix(String value)
+  ILogger GetLogger(String name)
+  Task ReloadLogger(LogSeverity severity, CancellationToken cancellationToken)
+  Void add_LoggerLoaded(EventHandler value)
+  Void remove_LoggerLoaded(EventHandler value)
+  Void Flush()
+  Void AddConsoleOutput()
+  Void RemoveConsoleOutput()
+
+=== BaseItem: artist-related properties ===
+  Int64 InternalAlbumId
+  Int64 AlbumId
+  String Album
+  LinkedItemInfo AlbumItem
+  Boolean SupportsEditingAlbum
+
+=== Audio type: interfaces + declared properties ===
+  interfaces: IHasProviderIds, IHasLookupInfo`1, IHasAlbumArtist, IHasAlbum, IHasMusicAlbum, IHasArtist, IHasMusicGenres, IHasLookupInfo`1, IHasMediaSources
+  String[] Artists
+  LinkedItemInfo[] ArtistItems
+  LinkedItemInfo[] Composers
+  String[] AlbumArtists
+  LinkedItemInfo[] AlbumArtistItems
+  Int64 ImageDisplayParentId
+  Boolean SupportsGenres
+  Boolean IsMedia
+  Boolean ForceDefaultAspectRatio
+  Boolean SupportsPeople
+  Boolean SupportsInheritedParentImages
+  Boolean SupportsOwnedItems
+  Int64 LatestItemsContainerId
+  Boolean SupportsExternalTransfer
+  String MediaType
+
+=== IHasArtist / IHasAlbumArtist (any type with Artist in name, Model assembly) ===
+
+=== BaseItem.InternalId ===
+  Int64 InternalId { get=True }
+
+=== IUserManager (user lookup) ===
+  MediaBrowser.Controller.Library.IUserManager
+  QueryResult`1 GetUsers(UserQuery query)
+  QueryResult`1 GetUsers(UserQuery query, CancellationToken cancellationToken)
+  User[] GetUserList(UserQuery query)
+  QueryResult`1 GetUserIds(UserQuery query)
+  Int64[] GetUserIdList(UserQuery query)
+  Int64[] GetUserIdList(UserQuery query, CancellationToken cancellationToken)
+  Int32 GetUserCount(UserQuery query)
+  Int32 GetUserCount(UserQuery query, CancellationToken cancellationToken)
+  User GetUserById(Guid id)
+  User GetUserById(Int64 id)
+  User GetUserById(String id)
+  User GetUserById(ReadOnlySpan`1 id)
+  User GetUserByName(String name)
+  UserDto GetUserDto(User user)
+  UserDto GetUserDto(User user, Boolean isAuthenticated)
+  UserPolicy GetUserPolicy(User user)
+  UserConfiguration GetUserConfiguration(User user)
+  String GetUserSetting(Int64 userId, String key)
+  String GetUserSetting(Int64 userId, String key, CancellationToken cancellationToken)
+  Int64[] GetUsersWithSettings(String key)
+  Type GetUserSettingsType(String key)
+  User GetUserByName(ReadOnlySpan`1 name)
+  User GetUserByName(String name, CancellationToken cancellationToken)
+  UserSettings GetUserSettings(Int64 userId)
+  UserSettings GetUserSettings(Int64 userId, CancellationToken cancellationToken)
+
+=== PlaylistCreationRequest.User property type ===
+  User type: MediaBrowser.Controller.Entities.User
+  ItemIdList type: System.Int64[]
+
+=== User type key props ===
+  Boolean UsesIdForConfigurationPath { get; set; }
+  String Password { get; set; }
+  String EasyPassword { get; set; }
+  String Salt { get; set; }
+  String ConnectUserName { get; set; }
+  String ConnectUserId { get; set; }
+  Nullable`1 ConnectLinkType { get; set; }
+  String ConnectAccessKey { get; set; }
+  ItemImageInfo[] ImageInfos { get; set; }
+  String Path { get; set; }
+  Boolean EnableInternalIdsExternally { get; }
+  String Name { get; set; }
+  String ContainingFolderPath { get; }
+  Nullable`1 LastLoginDate { get; set; }
+  Nullable`1 LastActivityDate { get; set; }
+  UserConfiguration Configuration { get; set; }
+  UserPolicy Policy { get; set; }
+  String ConfigurationDirectoryPath { get; }
+  Boolean SupportsPeople { get; }
+  Boolean IsLockedOut { get; }
+  Int32 PlayCount { get; set; }
+  Nullable`1 LastPlayedDate { get; set; }
+  Boolean Played { get; set; }
+  Nullable`1 AudioStreamIndex { get; set; }
+  Nullable`1 SubtitleStreamIndex { get; set; }
+  String UserDataKey { get; set; }
+  Boolean IsFavorite { get; set; }
+  Nullable`1 UserRating { get; set; }
+  Nullable`1 PlayedPercentage { get; set; }
+  Int64 PlaybackPositionTicks { get; set; }
+  Boolean UserDataSet { get; set; }
+  Int64 InternalId { get; set; }
+  String[] RemoteTrailers { get; set; }
+  Int64 ListItemEntryId { get; set; }
+  Boolean IsSecondaryMergedItemInSameFolder { get; set; }
+  Boolean IsPublic { get; set; }
+  Folder[] CollectionFolders { get; set; }
+  LibraryOptions LibraryOptions { get; set; }
+  List`1 MediaStreams { get; set; }
+  Nullable`1 ChildCount { get; set; }
+  Nullable`1 UnplayedItemCount { get; set; }
+  Nullable`1 AdditionalPartCount { get; set; }
+  Nullable`1 LocalTrailerCount { get; set; }
+  String VideoCodec { get; set; }
+  String AudioCodec { get; set; }
+  Nullable`1 AverageFrameRate { get; set; }
+  Nullable`1 RealFrameRate { get; set; }
+  Nullable`1 SpecialFeatureCount { get; set; }
+  Nullable`1 RecursiveItemCount { get; set; }
+  Boolean IsResolvedToFolder { get; }
+  Boolean SupportsUserData { get; }
+  Boolean IsPlaceHolder { get; }
+  Boolean SupportsExtras { get; }
+  Boolean SupportsAdditionalParts { get; }
+  Boolean IsCompleteMedia { get; }
+  Boolean IsMedia { get; }
+  Guid[] ThemeSongIds { get; }
+  Guid[] ThemeVideoIds { get; }
+  Guid[] LocalTrailerIds { get; }
+  Boolean AllowRecursiveCounts { get; }
+  Boolean RecursiveChildCountEqualsChildCount { get; }
+  String PreferredMetadataCountryCode { get; set; }
+  String PreferredMetadataLanguage { get; set; }
+  Int64 Size { get; set; }
+  String Prefix { get; set; }
+  Nullable`1 ShareLevel { get; set; }
+  Nullable`1 SyncStatus { get; set; }
+  String Container { get; set; }
+  Nullable`1 MediaContainer { get; }
+  String Tagline { get; set; }
+  Boolean PrimaryImageRequiresOrientation { get; }
+  Boolean IsVirtualItem { get; set; }
+  Int64 InternalAlbumId { get; set; }
+  Int64 AlbumId { get; }
+  Int64 SeriesId { get; set; }
+  String Album { get; set; }
+  LinkedItemInfo AlbumItem { get; set; }
+  Boolean SupportsEditingAlbum { get; }
+  Boolean IsInMixedFolder { get; set; }
+  Boolean OwnsFolder { get; set; }
+  String OriginalParsedName { get; set; }
+  Boolean IsNameParsedFromFolder { get; set; }
+  Boolean SupportsRemoteImageDownloading { get; }
+  Boolean IsShortcut { get; }
+  Boolean IsUnaired { get; }
+  Int32 TotalBitrate { get; set; }
+  Nullable`1 ExtraType { get; set; }
+  Boolean IsThemeMedia { get; }
+  String OriginalTitle { get; set; }
+  Guid Id { get; set; }
+  String IdString { get; }
+  Boolean IsHD { get; }
+  Int32 Width { get; set; }
+  Int32 Height { get; set; }
+  Guid DisplayPreferencesId { get; }
+  String ExternalId { get; set; }
+  String SeriesPresentationUniqueKey { get; set; }
+  Boolean IsHidden { get; }
+  LocationType LocationType { get; }
+  Nullable`1 PathProtocol { get; }
+  Boolean IsFileProtocol { get; }
+  Boolean HasPathProtocol { get; }
+  String FileNameWithoutExtension { get; }
+  String FileName { get; }
+  Boolean EnableAlphaNumericSorting { get; }
+  String PrimaryImagePath { get; }
+  Boolean SupportsExternalTransfer { get; }
+  DateTimeOffset DateCreated { get; set; }
+  DateTimeOffset DateModified { get; set; }
+  DateTimeOffset DateLastSaved { get; set; }
+  DateTimeOffset DateLastRefreshed { get; set; }
+  ILogger Logger { get; set; }
+  ILibraryManager LibraryManager { get; set; }
+  ILiveTvManager LiveTvManager { get; set; }
+  IFeatureManager FeatureManager { get; set; }
+  IUserManager UserManager { get; set; }
+  IServerConfigurationManager ConfigurationManager { get; set; }
+  IProviderManager ProviderManager { get; set; }
+  ILocalizationManager LocalizationManager { get; set; }
+  IItemRepository ItemRepository { get; set; }
+  IFileSystem FileSystem { get; set; }
+  IUserDataManager UserDataManager { get; set; }
+  IChannelManager ChannelManager { get; set; }
+  IMediaSourceManager MediaSourceManager { get; set; }
+  INetworkManager NetworkManager { get; set; }
+  IServerApplicationHost ApplicationHost { get; set; }
+  Boolean IsLocked { get; set; }
+  MetadataFields[] LockedFields { get; set; }
+  String MediaType { get; }
+  String SortName { get; set; }
+  Int64 ParentId { get; set; }
+  Folder Parent { get; set; }
+  Int64 DisplayParentId { get; }
+  Int64 ImageDisplayParentId { get; }
+  BaseItem DisplayParent { get; }
+  Nullable`1 PremiereDate { get; set; }
+  Nullable`1 EndDate { get; set; }
+  String OfficialRating { get; set; }
+  Nullable`1 CriticRating { get; set; }
+  String CustomRating { get; set; }
+  String Overview { get; set; }
+  String[] Studios { get; set; }
+  LinkedItemInfo[] StudioItems { get; set; }
+  String[] Genres { get; set; }
+  LinkedItemInfo[] GenreItems { get; set; }
+  String[] Tags { get; set; }
+  LinkedItemInfo[] TagItems { get; set; }
+  LinkedItemInfo[] Collections { get; set; }
+  LinkedItemInfo[] ImportedCollections { get; set; }
+  String[] ProductionLocations { get; set; }
+  Nullable`1 CommunityRating { get; set; }
+  Nullable`1 RunTimeTicks { get; set; }
+  Nullable`1 ProductionYear { get; set; }
+  Nullable`1 IndexNumber { get; set; }
+  Nullable`1 ParentIndexNumber { get; set; }
+  ReadOnlySpan`1 OfficialRatingForComparison { get; }
+  ReadOnlySpan`1 CustomRatingForComparison { get; }
+  Boolean SupportsOwnedItems { get; }
+  Boolean SupportsGenres { get; }
+  Boolean SupportsStudios { get; }
+  Boolean SupportsTags { get; }
+  Boolean SupportsCollections { get; }
+  Boolean SupportsThemeMedia { get; }
+  Boolean SupportsLocalTrailers { get; }
+  ProviderIdDictionary ProviderIds { get; set; }
+  Int64 LatestItemsContainerId { get; }
+  Boolean ForceDefaultAspectRatio { get; }
+  String PresentationUniqueKey { get; set; }
+  String ResolvedPresentationUniqueKey { get; set; }
+  Boolean SupportsInheritedParentImages { get; }
+  Boolean IsFolder { get; }
+  Boolean IsDisplayedAsFolder { get; }
+  Boolean EnableRememberingTrackSelections { get; }
+  Boolean IsTopParent { get; }
+  Boolean SupportsAncestors { get; }
+  Boolean SupportsResetMetadata { get; }
+  List`1 ResolvedExtras { get; set; }
+
+=== IRequest.Authorization ===
+  Authorization type: System.String
+  Char Chars { get; }
+  Int32 Length { get; }
+
+=== IRequiresRequest ===
+  IRequest Request { get; set; }
+
+=== Service discovery (Emby.Server.Implementations / Emby.Web) ===
+  -- Emby.Server.Implementations.ApplicationHost
+  -- Emby.Server.Implementations.Services.ServiceController
+  -- Emby.Server.Implementations.HttpServer.HttpListenerHost
+  ServiceController get_ServiceController()
+  -- Emby.Server.Implementations.HttpServer.IHttpListener
+  ApplicationHost plugin/service related methods:
+    IPlugin[] get_Plugins()
+    Void set_Plugins(IPlugin[] value)
+    IPluginConfigurationPage[] get_PluginConfigurationPages()
+    Void set_PluginConfigurationPages(IPluginConfigurationPage[] value)
+    IDtoService get_DtoService()
+    Void set_DtoService(IDtoService value)
+    IAuthService get_AuthService()
+    Void set_AuthService(IAuthService value)
+    ServiceController get_ServiceController()
+    Boolean IsExportType(Type currentType, Tuple`2 i)
+    IEnumerable`1 GetExportTypes()
+    IEnumerable`1 GetExports(Boolean manageLiftime)
+    IEnumerable`1 GetExports(Boolean manageLiftime, IList`1 excludeTypes)
+    List`1 GetExportsWithInfo(Boolean manageLiftime)
+    IList`1 GetEntryPoints()
+    Void RunEntryPoints(IEnumerable`1 entryPoints, Boolean isBeforeStartup)
+    IPlugin LoadPlugin(Tuple`2 info)
+    List`1 GetPluginAssemblies()
+    Void CopyPreInstalledPlugins()
+    Boolean AllowPluginFile(String file)
+    Void CopyPlugins(String source, String target)
+    String GetLastVersionCachePathForPlugins()
+    Void CopyPlugin(String src, String dest)
+    List`1 GetPluginAssemblies(String path)
+    Void RemovePlugin(IPlugin plugin)
+    Tuple`2 <GetExportsWithInfo>b__361_0(Tuple`2 i)

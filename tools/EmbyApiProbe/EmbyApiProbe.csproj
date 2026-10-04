@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>EmbyApiProbe</AssemblyName>
+    <RootNamespace>EmbyApiProbe</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="MediaBrowser.Model">
+      <HintPath>..\..\lib\MediaBrowser.Model.dll</HintPath>
+    </Reference>
+    <Reference Include="MediaBrowser.Common">
+      <HintPath>..\..\lib\MediaBrowser.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="MediaBrowser.Controller">
+      <HintPath>..\..\lib\MediaBrowser.Controller.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

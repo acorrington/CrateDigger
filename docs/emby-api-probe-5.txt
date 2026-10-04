@@ -1,0 +1,117 @@
+
+=== IPluginConfigurationPage ===
+  MediaBrowser.Controller.Plugins.IPluginConfigurationPage
+    String Name
+    ConfigurationPageType ConfigurationPageType
+    IPlugin Plugin
+    Stream GetHtmlStream()
+
+=== Types referencing IHasWebPages or GetPages (impl/api) ===
+  member: MediaBrowser.Model.Plugins.IHasWebPages.GetPages -> IEnumerable`1
+  member: MediaBrowser.Model.Plugins.UI.IPluginUIPageController.get_PageInfo -> PluginPageInfo
+  member: MediaBrowser.Controller.Plugins.IPluginUIPageRegistration.get_PageInfo -> PluginPageInfo
+  member: MediaBrowser.Controller.Plugins.Internal.PluginPageController`1.get_PageInfo -> PluginPageInfo
+
+=== Route DTOs mentioning plugin/page/dashboard-config ===
+  Emby.Api.GetPlugins : [/Plugins] verbs=GET
+  Emby.Api.GetPluginThumbImage : [/Plugins/{Id}/Thumb] verbs=GET
+  Emby.Api.UninstallPlugin : [/Plugins/{Id}] verbs=DELETE
+  Emby.Api.UninstallPlugin : [/Plugins/{Id}/Delete] verbs=POST
+  Emby.Api.GetPluginConfiguration : [/Plugins/{Id}/Configuration] verbs=GET
+  Emby.Api.UpdatePluginConfiguration : [/Plugins/{Id}/Configuration] verbs=POST
+  Emby.Api.GetPluginSecurityInfo : [/Plugins/SecurityInfo] verbs=GET
+  Emby.Api.UpdatePluginSecurityInfo : [/Plugins/SecurityInfo] verbs=POST
+  Emby.Api.GetRegistrationStatus : [/Plugins/RegistrationRecords/{Name}] verbs=GET
+
+=== ApplicationHost: GetExportTypes / IsExportType related (decompile-ish via names only) ===
+  IPlugin[] get_Plugins()
+  Void set_Plugins(IPlugin[] value)
+  IPluginConfigurationPage[] get_PluginConfigurationPages()
+  Void set_PluginConfigurationPages(IPluginConfigurationPage[] value)
+  Boolean IsExportType(Type currentType, Tuple`2 i)
+  IEnumerable`1 GetExportTypes()
+  IEnumerable`1 GetExports(Boolean manageLiftime)
+  IEnumerable`1 GetExports(Boolean manageLiftime, IList`1 excludeTypes)
+  List`1 GetExportsWithInfo(Boolean manageLiftime)
+  IList`1 GetEntryPoints()
+  Void RunEntryPoints(IEnumerable`1 entryPoints, Boolean isBeforeStartup)
+  IPlugin LoadPlugin(Tuple`2 info)
+  List`1 GetPluginAssemblies()
+  Void CopyPreInstalledPlugins()
+  Boolean AllowPluginFile(String file)
+  Void CopyPlugins(String source, String target)
+  String GetLastVersionCachePathForPlugins()
+  Void CopyPlugin(String src, String dest)
+  List`1 GetPluginAssemblies(String path)
+  Void RemovePlugin(IPlugin plugin)
+  Tuple`2 <GetExportsWithInfo>b__361_0(Tuple`2 i)
+
+=== AuthenticatedAttribute members ===
+  MediaBrowser.Controller.Net.AuthenticatedAttribute
+    ctor()
+    IAuthService AuthService
+    String Roles
+    String[] FeatureIds
+    Boolean AllowBeforeStartupWizard
+    Boolean AllowLocal
+    Boolean AllowLocalOnly
+    Boolean AllowNullThrowIfInvalid
+    Object TypeId
+
+=== IAuthService interface (where lives?) ===
+  MediaBrowser.Controller.Net.IAuthService
+    Void Authenticate(IRequest,IAuthenticationAttributes)
+
+=== RouteAttribute verbs format samples from real DTOs (first 8) ===
+  GetBrandingOptions: [/Branding/Configuration] verbs=GET
+  GetBrandingCss: [/Branding/Css] verbs=GET
+  GetBrandingCss: [/Branding/Css.css] verbs=GET
+  GetChannels: [/Channels] verbs=GET
+  GetChannelItems: [/Channels/{Id}/Items] verbs=GET
+  GetLatestChannelItems: [/Channels/Items/Latest] verbs=GET
+  GetConfiguration: [/System/Configuration] verbs=GET
+  UpdateConfiguration: [/System/Configuration] verbs=POST
+
+=== First-party plugins (MBBackup / OpenSubtitles / Emby.Webhooks) ===
+  -- MBBackup.dll
+     class Plugin : IHasWebPages
+       ctor(MediaBrowser.Common.Configuration.IApplicationPaths applicationPaths, MediaBrowser.Model.Serialization.IXmlSerializer xmlSerializer, MediaBrowser.Model.IO.IFileSystem fileSystem)
+       IEnumerable`1 GetPages()
+     class ServerEntryPoint : IServerEntryPoint
+       ctor(MediaBrowser.Model.Tasks.ITaskManager taskManager, MediaBrowser.Common.Security.ISecurityManager securityManager, MediaBrowser.Controller.Library.ILibraryManager libraryManager, MediaBrowser.Controller.Library.IUserDataManager userDataManager, MediaBrowser.Controller.Library.IUserManager userManager, MediaBrowser.Model.IO.IFileSystem fileSystem, MediaBrowser.Controller.IServerApplicationPaths appPaths, MediaBrowser.Model.Logging.ILogManager logManager, MediaBrowser.Model.Serialization.IJsonSerializer jsonSerializer, MediaBrowser.Controller.IServerApplicationHost appHost, MediaBrowser.Model.Serialization.IXmlSerializer xmlSerializer, MediaBrowser.Controller.Configuration.IServerConfigurationManager serverConfigurationManager, MediaBrowser.Controller.Notifications.INotificationManager notificationManager, MediaBrowser.Model.Globalization.ILocalizationManager localizationManager)
+       Void Run()
+     class BackupApi : IService, IRequiresRequest
+       ctor()
+       Task Post(RestoreFromBackup request)
+       Void Post(RestoreDataFromBackup request)
+       Object Get(GetBackupInfo request)
+     DTO RestoreFromBackup : IReturnVoid,IReturn
+       [RouteAttribute: MediaBrowser.Model.Services.RouteAttribute]
+       [AuthenticatedAttribute: MediaBrowser.Controller.Net.AuthenticatedAttribute]
+     DTO RestoreDataFromBackup : IReturnVoid,IReturn
+       [RouteAttribute: MediaBrowser.Model.Services.RouteAttribute]
+       [AuthenticatedAttribute: MediaBrowser.Controller.Net.AuthenticatedAttribute]
+     DTO GetBackupInfo : IReturn`1,IReturn
+       [RouteAttribute: MediaBrowser.Model.Services.RouteAttribute]
+       [AuthenticatedAttribute: MediaBrowser.Controller.Net.AuthenticatedAttribute]
+     resources: MBBackup.Configuration.configPage.html, MBBackup.Configuration.extractdatadialog.template.html, MBBackup.Configuration.restoredialog.template.html, MBBackup.Configuration.configPage.js, MBBackup.Configuration.extractdatadialog.js, MBBackup.Configuration.restoredialog.js
+  -- OpenSubtitles.dll
+     class Plugin : IHasWebPages
+       ctor()
+       IEnumerable`1 GetPages()
+     resources: OpenSubtitles.Configuration.opensubtitles.html, OpenSubtitles.Configuration.opensubtitles.js, OpenSubtitles.strings.ar.json, OpenSubtitles.strings.bg.json, OpenSubtitles.strings.ca.json, OpenSubtitles.strings.cs.json
+  -- Emby.Webhooks.dll
+     class Plugin : IHasWebPages
+       ctor()
+       IEnumerable`1 GetPages()
+     class NotificationsApi : IService, IRequiresRequest
+       ctor(MediaBrowser.Controller.Configuration.IServerConfigurationManager config, MediaBrowser.Model.Serialization.IJsonSerializer jsonSerializer, MediaBrowser.Common.Net.IHttpClient httpClient, MediaBrowser.Controller.IServerApplicationHost appHost, MediaBrowser.Controller.Net.IAuthorizationContext authorizationContext)
+       Task`1 Get(GetSampleJson request)
+       Task Post(ReceiveNotificationTest request)
+     DTO ReceiveNotificationTest : IReturnVoid,IReturn,IRequiresRequestStream
+       [RouteAttribute: MediaBrowser.Model.Services.RouteAttribute]
+       [UnauthenticatedAttribute: MediaBrowser.Controller.Net.UnauthenticatedAttribute]
+     DTO GetSampleJson : IReturn`1,IReturn
+       [RouteAttribute: MediaBrowser.Model.Services.RouteAttribute]
+       [AuthenticatedAttribute: MediaBrowser.Controller.Net.AuthenticatedAttribute]
+     resources: Emby.Webhooks.Configuration.entryeditor.js, Emby.Webhooks.Configuration.entryeditor.template.html, Emby.Webhooks.strings.ar.json, Emby.Webhooks.strings.bg.json, Emby.Webhooks.strings.ca.json, Emby.Webhooks.strings.cs.json

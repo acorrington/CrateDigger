@@ -1,0 +1,36 @@
+=== MBBackup.dll ===
+  class MBBackup.Plugin : base=MediaBrowser.Common.Plugins.BasePlugin`1[[MBBackup.Configuration.PluginConfiguration, MBBackup, Version=1.8.6.0, Culture=neutral, PublicKeyToken=null]]
+  config type: MBBackup.Configuration.PluginConfiguration
+  GetPages() string literals:
+    ldstr "embybackup"
+    ldstr ".Configuration.configPage.html"
+    ldstr "Backup & Restore"
+    ldstr "settings_backup_restore"
+    ldstr "embybackupjs"
+    ldstr ".Configuration.configPage.js"
+    ldstr "restoredialogjs"
+    ldstr ".Configuration.restoredialog.js"
+    ldstr "restoredialoghtml"
+    ldstr ".Configuration.restoredialog.template.html"
+    ldstr "extractdatadialogjs"
+    ldstr ".Configuration.extractdatadialog.js"
+    ldstr "extractdatadialoghtml"
+    ldstr ".Configuration.extractdatadialog.template.html"
+
+=== OpenSubtitles.dll ===
+  class OpenSubtitles.Plugin : base=MediaBrowser.Common.Plugins.BasePlugin
+  GetPages() string literals:
+    ldstr "opensubtitles"
+    ldstr ".Configuration.opensubtitles.html"
+    ldstr "closed_caption"
+    ldstr "opensubtitlesjs"
+    ldstr ".Configuration.opensubtitles.js"
+
+=== Emby.Webhooks.dll ===
+  class Emby.Webhooks.Plugin : base=MediaBrowser.Common.Plugins.BasePlugin
+  GetPages() string literals:
+    ldstr "webhookeditorjs"
+    ldstr ".Configuration.entryeditor.js"
+    ldstr "webhookeditortemplate"
+    ldstr ".Configuration.entryeditor.template.html"
+

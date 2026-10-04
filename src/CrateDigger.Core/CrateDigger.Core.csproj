@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>CrateDigger.Core</RootNamespace>
+    <Description>Pure logic for the CrateDigger Emby plugin: prompting, LLM calls, response parsing, fuzzy matching.</Description>
+  </PropertyGroup>
+
+</Project>

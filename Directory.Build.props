@@ -1,0 +1,12 @@
+<Project>
+  <!-- Shared settings for all CrateDigger projects -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>0.1.1</Version>
+    <Authors>CrateDigger contributors</Authors>
+    <Product>CrateDigger</Product>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

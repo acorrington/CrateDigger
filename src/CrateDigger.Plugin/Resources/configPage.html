@@ -1,0 +1,83 @@
+<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/cratediggerjs2" data-title="CrateDigger">
+    <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page">
+
+        <div class="verticalSection">
+            <h2 class="sectionTitle">CrateDigger</h2>
+            <div class="fieldDescription" style="margin-bottom:1em;">
+                Describe a vibe and CrateDigger digs the matching tracks out of your library
+                and builds a native Emby playlist.
+            </div>
+        </div>
+
+        <!-- ============ Settings ============ -->
+        <form class="auto-center cdSettings">
+            <div class="verticalSection">
+                <h3 class="sectionTitle">Settings</h3>
+
+                <div class="inputContainer">
+                    <input is="emby-input" type="password" class="cdApiKey" label="OpenAI API key" autocomplete="off" />
+                    <div class="fieldDescription">Stored in the plugin configuration. Leave empty for key-less local endpoints (e.g. Ollama).</div>
+                </div>
+
+                <div class="inputContainer">
+                    <input is="emby-input" type="text" class="cdBaseUrl" label="API base URL" autocomplete="off" />
+                    <div class="fieldDescription">OpenAI-compatible endpoint. Examples: https://api.openai.com/v1 · http://localhost:11434/v1 (Ollama)</div>
+                </div>
+
+                <div class="inputContainer">
+                    <input is="emby-input" type="text" class="cdModel" label="Model" autocomplete="off" />
+                </div>
+
+                <div class="inputContainer">
+                    <input is="emby-input" type="number" class="cdMaxTracks" label="Target playlist length" />
+                </div>
+
+                <div class="inputContainer">
+                    <input is="emby-input" type="number" class="cdThreshold" label="Match threshold (0.1 – 1.0)" />
+                    <div class="fieldDescription">Lower = looser fuzzy matching. Default 0.75.</div>
+                </div>
+
+                <div class="inputContainer">
+                    <input is="emby-input" type="number" class="cdTimeout" label="LLM timeout (seconds)" />
+                    <div class="fieldDescription">Per-request timeout. Local models need more time — default 300.</div>
+                </div>
+
+                <div class="inputContainer">
+                    <input is="emby-input" type="number" class="cdMaxTokens" label="Max output tokens (0 = unlimited)" />
+                    <div class="fieldDescription">Caps generated tokens so a runaway local generation can't hang. Default 8192.</div>
+                </div>
+
+                <div class="inputContainer">
+                    <textarea class="cdExtraJson emby-input fullWidth" rows="2" label='Extra request JSON (advanced)' placeholder='{"chat_template_kwargs":{"enable_thinking":false}}'></textarea>
+                    <div class="fieldDescription">Raw JSON merged into the LLM request body — server-specific options like disabling a reasoning model's thinking.</div>
+                </div>
+
+                <div class="readOnlyContent auto-center" style="margin-top:2em;">
+                    <button is="emby-button" type="submit" class="raised button-submit block"><span>Save Settings</span></button>
+                </div>
+            </div>
+        </form>
+
+        <!-- ============ Generation ============ -->
+        <div class="verticalSection auto-center" style="max-width:640px;">
+            <h3 class="sectionTitle">Generate a playlist</h3>
+
+            <div class="inputContainer">
+                <textarea class="cdPrompt emby-input fullWidth" rows="4" label="Describe your playlist theme…" placeholder="Upbeat 80s synth music for working out"></textarea>
+            </div>
+
+            <button is="emby-button" type="button" class="raised block btnGenerate"><span class="btnGenerateLabel">Generate Playlist</span></button>
+
+            <!-- Staged status indicator -->
+            <div class="cdStatus" style="display:none;margin-top:1.25em;">
+                <div class="cdStatusMessage" style="font-size:1.05em;margin-bottom:.75em;">&nbsp;</div>
+                <ul class="cdStages" style="list-style:none;padding:0;margin:0;opacity:.9;"></ul>
+            </div>
+
+            <!-- Result / error panels -->
+            <div class="cdResult" style="display:none;margin-top:1.25em;padding:1em;border-radius:8px;background:rgba(255,255,255,.06);"></div>
+            <div class="cdError" style="display:none;margin-top:1.25em;padding:1em;border-radius:8px;background:rgba(200,60,60,.18);color:#ffb3b3;"></div>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,17 @@
+# .NET build output
+bin/
+obj/
+*.user
+.vs/
+*.DotSettings.user
+
+# Real Emby DLLs (proprietary; local-only)
+lib/*.dll
+lib/*.xml
+
+# Extracted first-party Emby resources (local reference material only)
+docs/reference-pages/
+
+# Local deployment artifacts
+*.dll.config
+artifacts/

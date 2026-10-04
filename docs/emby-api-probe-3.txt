@@ -1,0 +1,108 @@
+
+=== IService implementations in Emby.Api.dll (route/verb/IReturn pattern) ===
+  count: 45
+  -- Emby.Api.BrandingService
+  ctor(MediaBrowser.Common.Configuration.IConfigurationManager config)
+    Object Get(GetBrandingOptions request)   
+    Object Get(GetBrandingCss request)   
+  -- Emby.Api.ChannelService
+  ctor(MediaBrowser.Controller.Channels.IChannelManager channelManager, MediaBrowser.Controller.Dto.IDtoService dtoService)
+    Object Get(GetChannels request)   
+    Object Get(GetChannelItems request)   
+    Object Get(GetLatestChannelItems request)   
+  -- Emby.Api.ConfigurationService
+  ctor(MediaBrowser.Model.Serialization.IJsonSerializer jsonSerializer, MediaBrowser.Controller.Configuration.IServerConfigurationManager configurationManager, MediaBrowser.Model.IO.IFileSystem fileSystem, MediaBrowser.Controller.Providers.IProviderManager providerManager, MediaBrowser.Controller.Library.ILibraryManager libraryManager, MediaBrowser.Controller.MediaEncoding.IMediaEncoder mediaEncoder)
+    Object Get(GetConfiguration request)   
+    Void Post(UpdateConfiguration request)   
+    Task Post(UpdatePartialConfiguration request)   
+    Object Get(GetNamedConfiguration request)   
+    Task Post(UpdateNamedConfiguration request)   
+  -- Emby.Api.DisplayPreferencesService
+  ctor(MediaBrowser.Model.Serialization.IJsonSerializer jsonSerializer)
+    Object Get(GetDisplayPreferences request)   
+    Void Post(UpdateDisplayPreferences request)   
+    Object Get(GetUserSettings request)   
+    Void Post(UpdateUserSettings request)   
+    Task Post(UpdatePartialUserSettings request)   
+
+=== Do Emby.Api services implement IRequiresRequest? ===
+  BrandingService: IService,IRequiresRequest
+  ChannelService: IService,IRequiresRequest
+  ConfigurationService: IService,IRequiresRequest
+  DisplayPreferencesService: IService,IRequiresRequest
+  EnvironmentService: IService,IRequiresRequest
+  FeatureService: IService,IRequiresRequest
+  ItemLookupService: IService,IRequiresRequest
+  ItemRefreshService: IService,IRequiresRequest
+
+=== IAuthService / authorization types ===
+  IAuthService: not in Api/Implementations
+  AuthorizationInfo: not in Api/Implementations
+  IAuthorizationContext: not in Api/Implementations
+  -- Emby.Server.Implementations.HttpServer.Security.AuthService (interfaces: IAuthService)
+    IUserManager get_UserManager()
+    IAuthorizationContext get_AuthorizationContext()
+    IConnectManager get_ConnectManager()
+    ISessionManager get_SessionManager()
+    INetworkManager get_NetworkManager()
+    Void Authenticate(IRequest request, IAuthenticationAttributes authAttribtues)
+
+=== Emby.Api services mentioning User/auth in bodies (signatures only) ===
+  -- Emby.Api.UserService
+  ctor(MediaBrowser.Model.Serialization.IJsonSerializer json, MediaBrowser.Controller.Library.IUserDataManager userDataManager, MediaBrowser.Controller.Session.ISessionManager sessionMananger, MediaBrowser.Controller.Configuration.IServerConfigurationManager config)
+    Object Get(GetPublicUsers request)
+    Object Get(GetUsers request)
+    Object Get(GetUsersResult request)
+    Object Get(GetUsersPrefixesResult request)
+    Object Get(GetUsersForItemAccess request)
+    Object Get(GetUser request)
+    Task Any(DeleteUser request)
+    Task DeleteAsync(DeleteUser request)
+
+=== UserQuery + User key props ===
+  MediaBrowser.Model.Querying.UserQuery ctors: ()
+    Nullable`1 IsHidden
+    Nullable`1 IsHiddenRemotely
+    Nullable`1 IsDisabled
+    Nullable`1 EnableLiveTvAccess
+    Nullable`1 IsAdministrator
+    Nullable`1 EnableRemoteAccess
+    Nullable`1 HasConnectUserId
+    String ConnectUserId
+    String ConnectUserName
+    String ConnectAccessKey
+    Nullable`1 HasConnectAccessKey
+    String IsDisplayedOnDeviceId
+
+=== IRequest members around auth ===
+  System.String UserAgent
+  System.String Authorization
+  -- GetQueryString-style helpers containing 'User':
+    String get_UserAgent()
+    String get_Authorization()
+
+=== AuthService impl methods (Implementations) ===
+  ctor(MediaBrowser.Controller.Library.IUserManager userManager, MediaBrowser.Model.Logging.ILogger logger, MediaBrowser.Controller.Net.IAuthorizationContext authorizationContext, MediaBrowser.Controller.Configuration.IServerConfigurationManager config, MediaBrowser.Controller.Connect.IConnectManager connectManager, MediaBrowser.Controller.Session.ISessionManager sessionManager, MediaBrowser.Common.Net.INetworkManager networkManager)
+    IUserManager get_UserManager()
+    Void set_UserManager(IUserManager value)
+    IAuthorizationContext get_AuthorizationContext()
+    Void set_AuthorizationContext(IAuthorizationContext value)
+    IConnectManager get_ConnectManager()
+    Void set_ConnectManager(IConnectManager value)
+    ISessionManager get_SessionManager()
+    Void set_SessionManager(ISessionManager value)
+    INetworkManager get_NetworkManager()
+    Void set_NetworkManager(INetworkManager value)
+    Void Authenticate(IRequest request, IAuthenticationAttributes authAttribtues)
+    Boolean IsExemptFromAuthenticationToken(AuthorizationInfo auth, IAuthenticationAttributes authAttribtues, IRequest request)
+    Boolean IsExemptFromRoles(AuthorizationInfo auth, IAuthenticationAttributes authAttribtues, IRequest request, AuthenticationInfo tokenInfo)
+    Boolean IsValidConnectKey(String token, CancellationToken cancellationToken)
+
+=== ServiceController method-matching internals (names only) ===
+    Void Init(HttpListenerHost, Type[])
+    Void RegisterService(HttpListenerHost, Type)
+    Void CreateServiceRunnersFor(Type, List`1)
+    Void RegisterRestPaths(HttpListenerHost, Type, Type, IHasRequestFilter[])
+    Void RegisterRestPath(RestPath)
+    RestPath GetRestPathForRequest(ReadOnlySpan`1, ReadOnlySpan`1)
+    Task`1 Execute(HttpListenerHost, Object, IRequest, Type)

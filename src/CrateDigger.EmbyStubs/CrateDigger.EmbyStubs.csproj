@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>MediaBrowser</RootNamespace>
+    <Description>
+      Compile-time stand-ins for the Emby Server plugin API (MediaBrowser.*.dll).
+      ONLY used while the real DLLs are absent from the lib/ folder.
+      Drop the real MediaBrowser.Controller.dll / MediaBrowser.Model.dll /
+      MediaBrowser.Common.dll into lib/ and the CrateDigger.Plugin project
+      automatically switches to referencing them instead of this project.
+    </Description>
+  </PropertyGroup>
+
+</Project>

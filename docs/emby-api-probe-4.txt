@@ -1,0 +1,62 @@
+
+=== IAuthorizationContext ===
+  MediaBrowser.Controller.Net.IAuthorizationContext
+    MediaBrowser.Controller.Net.AuthorizationInfo GetAuthorizationInfo(System.Object requestContext)
+    MediaBrowser.Controller.Net.AuthorizationInfo GetAuthorizationInfo(MediaBrowser.Model.Services.IRequest requestContext)
+
+=== AuthorizationInfo ===
+  MediaBrowser.Controller.Net.AuthorizationInfo
+    Int64 UserId
+    User User
+    Int64 DeviceId
+    String ReportedDeviceId
+    String Device
+    String Client
+    String Version
+    String Token
+    String[] TokenRoles
+    String Language
+
+=== GetBrandingOptions DTO (route/auth/IReturn placement) ===
+  Emby.Api.GetBrandingOptions
+  interfaces: IReturn`1,IReturn
+    [MediaBrowser.Model.Services.RouteAttribute: MediaBrowser.Model.Services.RouteAttribute]
+    [MediaBrowser.Controller.Net.UnauthenticatedAttribute: MediaBrowser.Controller.Net.UnauthenticatedAttribute]
+
+=== UpdateConfiguration DTO attributes ===
+  interfaces: IReturnVoid,IReturn
+    [MediaBrowser.Model.Services.RouteAttribute: MediaBrowser.Model.Services.RouteAttribute]
+    [MediaBrowser.Controller.Net.AuthenticatedAttribute: MediaBrowser.Controller.Net.AuthenticatedAttribute]
+
+=== Types with 'Authenticat' in name ===
+  MediaBrowser.Model.Connect.ConnectAuthenticationResult
+  MediaBrowser.Controller.Session.AuthenticationRequest
+  MediaBrowser.Controller.Security.AuthenticationInfo
+  MediaBrowser.Controller.Security.AuthenticationInfoQuery
+  MediaBrowser.Controller.Security.IAuthenticationRepository
+  MediaBrowser.Controller.Net.AuthenticatedAttribute
+  MediaBrowser.Controller.Net.IAuthenticationAttributes
+  MediaBrowser.Controller.Net.UnauthenticatedAttribute
+  MediaBrowser.Controller.Authentication.AuthenticationResult
+  MediaBrowser.Controller.Authentication.IAuthenticationProvider
+  MediaBrowser.Controller.Authentication.ProviderAuthenticationResult
+  Emby.Api.AuthenticateUser
+  Emby.Api.AuthenticateUserByName
+  Emby.Server.Implementations.Services.OpenApi.RequiredAuthentication
+  Emby.Server.Implementations.Security.AuthenticationRepository
+
+=== GetUsers DTO attributes (does it demand auth?) ===
+  Emby.Api.GetUsers
+    [MediaBrowser.Model.Services.RouteAttribute: MediaBrowser.Model.Services.RouteAttribute]
+    [MediaBrowser.Controller.Net.AuthenticatedAttribute: MediaBrowser.Controller.Net.AuthenticatedAttribute]
+
+=== IAuthenticationAttributes ===
+  MediaBrowser.Controller.Net.IAuthenticationAttributes
+    Boolean AllowBeforeStartupWizard
+    Boolean AllowLocal
+    Boolean AllowLocalOnly
+    Boolean AllowNullThrowIfInvalid
+
+=== User.Id type ===
+  System.Guid Id { get=True }
+  Int64 InternalId

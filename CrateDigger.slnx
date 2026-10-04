@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CrateDigger.Core/CrateDigger.Core.csproj" />
+    <Project Path="src/CrateDigger.EmbyStubs/CrateDigger.EmbyStubs.csproj" />
+    <Project Path="src/CrateDigger.Plugin/CrateDigger.Plugin.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CrateDigger.Core.Tests/CrateDigger.Core.Tests.csproj" />
+  </Folder>
+</Solution>
