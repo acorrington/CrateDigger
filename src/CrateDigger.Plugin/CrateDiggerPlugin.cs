@@ -3,9 +3,11 @@ using CrateDigger.Plugin.Configuration;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Controller.Plugins;
+using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
+using System.Reflection;
 
 namespace CrateDigger.Plugin;
 
@@ -18,8 +20,11 @@ namespace CrateDigger.Plugin;
 ///   * IServerEntryPoint — Run() at server startup
 /// REST endpoints live in <see cref="Api.CrateDiggerService"/> (IService, also auto-discovered).
 /// </summary>
-public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, IServerEntryPoint
+public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, IServerEntryPoint, IHasThumbImage
 {
+    /// <summary>Embedded artwork served by GetThumbImage (see tools/make-thumb.ps1).</summary>
+    private const string ThumbResourceName = "CrateDigger.Plugin.thumb.png";
+
     /// <summary>Fixed identity shared with Resources/configPage.js (PluginUniqueId).</summary>
     public static readonly Guid PluginGuid = new("9b2f7a1c-5d4e-4a68-b3f1-8c0e2d7f6a54");
 
@@ -74,6 +79,17 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
             EmbeddedResourcePath = GetType().Namespace + ".Resources.configPage.js",
         };
     }
+
+    /// <summary>
+    /// Plugins-page thumbnail (GET /Plugins/{Id}/Thumb). The handler resolves the
+    /// plugin and reads IHasThumbImage without a null-guard — a plugin WITHOUT this
+    /// interface makes the endpoint 500 with an NRE (verified live on 4.10.1.0).
+    /// </summary>
+    public ImageFormat ThumbImageFormat => ImageFormat.Png;
+
+    public Stream GetThumbImage() =>
+        Assembly.GetExecutingAssembly().GetManifestResourceStream(ThumbResourceName)
+        ?? throw new InvalidOperationException($"Embedded thumb resource '{ThumbResourceName}' not found.");
 
     /// <summary>Called by the server after plugins load.</summary>
     public void Run()

@@ -50,6 +50,13 @@
     <!-- Served by IHasWebPages / PluginPageInfo.EmbeddedResourcePath -->
     <EmbeddedResource Include="Resources\configPage.html" />
     <EmbeddedResource Include="Resources\configPage.js" />
+    <!--
+      Plugins-page thumbnail: GET /Plugins/{Id}/Thumb serves IHasThumbImage.GetThumbImage()
+      (format: ImageFormat.Png). CrateDiggerPlugin streams this exact embedded resource;
+      without the interface the endpoint 500s (verified NRE on live 4.10.1.0).
+      LogicalName matches ThumbResourceName in CrateDiggerPlugin.cs.
+    -->
+    <EmbeddedResource Include="Resources\thumb.png" LogicalName="CrateDigger.Plugin.thumb.png" />
   </ItemGroup>
 
   <ItemGroup>
