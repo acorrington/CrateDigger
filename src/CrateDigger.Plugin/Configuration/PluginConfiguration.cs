@@ -70,4 +70,15 @@ public class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Remove seed entries after a successful run (one batch = one playlist).</summary>
     public bool SeedClearAfterRun { get; set; } = true;
+
+    /// <summary>
+    /// v0.2.1: react to PlaylistItemsAdded instead of waiting for the interval tick.
+    /// Generation starts after <see cref="SeedDebounceSeconds"/> of QUIET — each new
+    /// add resets the window (classic debounce), so a session of adding = one batch.
+    /// The 3-minute interval task remains as the safety-net backstop.
+    /// </summary>
+    public bool SeedDebounceEnabled { get; set; } = true;
+
+    /// <summary>Quiet window in seconds before a debounced run starts (5–3600).</summary>
+    public int SeedDebounceSeconds { get; set; } = 60;
 }

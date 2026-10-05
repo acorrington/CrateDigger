@@ -29,10 +29,12 @@ builds a native Emby playlist.
 
 - 🎛 **Dashboard config page** — API key, endpoint, model, match threshold, playlist length
 - 💬 **Prompt box** — "Upbeat 80s synth music for working out"
-- 📡 **Seed-playlist trigger (v0.2.0)** — from *any* Emby app (phone, web, TV):
-  song → **⋯ → Add to playlist → `CrateDigger Seeds`**; a scheduled task (default every
-  3 min) turns the seeds into a fresh timestamped playlist and empties the queue.
-  Watch it under **Dashboard → Scheduled Tasks → CrateDigger**.
+- 📡 **Seed-playlist trigger** — from *any* Emby app (phone, web, TV):
+  song → **⋯ → Add to playlist → `CrateDigger Seeds`**. Debounced since v0.2.1: generation
+  starts ~1 minute after your **last** add (each add resets the window — configurable in
+  settings); a 3-minute scheduled task acts as backstop. Results land as a fresh
+  timestamped playlist and the queue empties itself. Watch runs under
+  **Dashboard → Scheduled Tasks → CrateDigger**.
 - 📊 **Live staged status** — *Analyzing library… → Thinking… → Matching tracks… → Creating playlist…*
 - 🧠 **Any OpenAI-compatible endpoint** — OpenAI, Ollama, LM Studio, OpenRouter, Unsloth
 - 🧩 **Fuzzy matching** — typo/diacritics/decoration-tolerant resolution of AI suggestions to your

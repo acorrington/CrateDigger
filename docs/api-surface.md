@@ -39,6 +39,7 @@ Sources of truth used during discovery:
 | 21 | m3u-backed playlists are NOT tree-linked | any `InternalItemsQuery` parent scoping (`Parent`, `ParentIds[]`, `TopParentIds[]`, `HasParentId`, ± `SkipAncestorNormalization`) returns **0 children** for playlist items (10-shape diagnostic matrix). REST `?ParentId=` special-cases them server-side. Read playlist contents from the m3u instead: `{programdata}\data\userplaylists\{Name} [playlist]\{Name}.m3u` (programdata derived from `BasePlugin.ConfigurationFilePath`); entries carry `#EXTART`/`#EXTINF` metadata — resolve to library items with the fuzzy matcher, never via paths (they're relative and format-quirky) | ✅ E2E |
 | 22 | Playlist REST DTOs | `AddToPlaylist`/`CreatePlaylist`/`RemoveFromPlaylist` take **comma-separated STRING fields** (`Ids`, `EntryIds` — `System.String`, not arrays!) and this server binds them from **form/query, not JSON bodies** (same quirk as `/Users/AuthenticateByName`): `--data 'Ids=11757,11764'` works, JSON silently binds nothing (`ItemAddedCount:0`) | ✅ empirically |
 | 23 | Service routes & verbs | route lives **on the DTO class** (`[Route(path, verbs)]` + `[Authenticated]` + `IReturn<T>`) and the service method must be **verb-named** (`Get`/`Post` overloads — `GetDiagChildren` never dispatches); `GET /Items` itself accepts query params mirroring `InternalItemsQuery` names | ✅ |
+| 24 | Playlist change events | `IPlaylistManager.PlaylistItemsAdded/Removed/Moved` exist (subscribe from an entry point); **Added args carry ONLY `Playlist`** (no entry ids) while Removed/Moved also carry `ListItemEntryIds : Int64[]`. CrateDigger v0.2.1 debounces Added on the seed playlist: each add cancels+rearms a quiet-window timer (`SeedDebounceSeconds`, default 60), a shared `SemaphoreSlim` gate stops overlap with the interval backstop, and clear-step re-reads the m3u so seeds added mid-run are kept, never wiped | ✅ E2E |
 
 ## Environment facts
 
@@ -60,6 +61,7 @@ Sources of truth used during discovery:
 | ST-002 | End-to-end generation (mock LLM): 2830-track library → artist shortlist → tracklist → fuzzy match → playlist | ✅ 5/5 matched, playlist `.m3u` written |
 | ST-003 | Real local LLM (Unsloth `unsloth/Qwen3.8-27B-GGUF` @ `localhost:8888/v1`) — "backyard barbecue" prompt | ✅ 57s, playlist "Backyard Rock & Pop", 23/30 matched, 7 hallucinations/absent tracks correctly rejected |
 | ST-004 | Seed-playlist trigger E2E (v0.2.0): 2 seeds added via API → `POST /ScheduledTasks/Running/{Id}` → 265s run → 45-track "CrateDigger Radio 10-05 15:33", 0 unmatched, seeds cleared + playlist recreated | ✅ |
+| ST-005 | Debounce E2E (v0.2.1): add A → 6s → add B → timer re-armed (log proof), quiet window elapsed exactly 10.0s after **B** (not A), run gated against a concurrent interval-task tick ("already in progress"), result: 45 tracks, seeds cleared | ✅ |
 
 ## LLM integration lessons (local/Unsloth servers)
 

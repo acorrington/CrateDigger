@@ -94,6 +94,10 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             config.SeedPlaylistName = (view.querySelector('.cdSeedName').value || '').trim() || 'CrateDigger Seeds';
             config.SeedResultName = (view.querySelector('.cdSeedResult').value || '').trim() || 'CrateDigger Radio';
             config.SeedClearAfterRun = view.querySelector('.cdSeedClear').checked;
+            config.SeedDebounceEnabled = view.querySelector('.cdSeedDebounce').checked;
+            config.SeedDebounceSeconds = parseInt(view.querySelector('.cdSeedDebounceSec').value, 10) || 60;
+            if (config.SeedDebounceSeconds < 5) config.SeedDebounceSeconds = 5;
+            if (config.SeedDebounceSeconds > 3600) config.SeedDebounceSeconds = 3600;
             try {
                 if (config.LlmExtraJson) {
                     JSON.parse(config.LlmExtraJson);
@@ -130,6 +134,8 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             view.querySelector('.cdSeedName').value = config.SeedPlaylistName || 'CrateDigger Seeds';
             view.querySelector('.cdSeedResult').value = config.SeedResultName || 'CrateDigger Radio';
             view.querySelector('.cdSeedClear').checked = config.SeedClearAfterRun !== false;
+            view.querySelector('.cdSeedDebounce').checked = config.SeedDebounceEnabled !== false;
+            view.querySelector('.cdSeedDebounceSec').value = config.SeedDebounceSeconds || 60;
             var echo = view.querySelector('.cdSeedNameEcho');
             if (echo) echo.textContent = view.querySelector('.cdSeedName').value || 'CrateDigger Seeds';
             view.querySelector('.cdMaxTokens').value = typeof config.LlmMaxTokens === 'number' ? config.LlmMaxTokens : 16384;
