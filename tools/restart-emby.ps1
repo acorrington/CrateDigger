@@ -88,7 +88,11 @@ Write-Host ("    verified: exactly 1 EmbyServer (pid {0}) owns :8096" -f $server
 # 6. Exactly one tray (unless disabled).
 if (-not $NoTray -and (Test-Path $trayExe)) {
     Get-Process -Name embytray -ErrorAction SilentlyContinue | Stop-Process -Force
-    Start-Process $trayExe -ArgumentList '"tray"', '"http://localhost:8096"', '"en-US"'
+    # -WorkingDirectory is CRITICAL: embytray resolves traystrings\en-US.json
+    # relative to its CWD. Inheriting the caller's directory (e.g. a repo folder)
+    # makes it spam "error opening file" in a console window that keeps reappearing.
+    Start-Process $trayExe -ArgumentList '"tray"', '"http://localhost:8096"', '"en-US"' `
+        -WorkingDirectory $sysDir -WindowStyle Hidden
     Start-Sleep -Seconds 2
     $trays = @(Get-Process -Name embytray -ErrorAction SilentlyContinue)
     Write-Host ("    tray: {0} instance(s)" -f $trays.Count)
