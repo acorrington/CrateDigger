@@ -74,13 +74,21 @@ public static class M3uSeedParser
         return seeds;
     }
 
-    /// <summary>"Depeche Mode - Policy Of Truth.mp3" → (artist, title); null when no separator.</summary>
+    /// <summary>"Depeche Mode - Policy Of Truth.mp3" → (artist, title); null when no separator.
+    /// Splits on both separators manually — Path.GetFileName is NOT portable (on Linux
+    /// '\' is not a separator, which broke this test in CI while passing on Windows).</summary>
     private static (string Artist, string Title)? TrackRefFromFileName(string pathLine)
     {
-        var fileName = Path.GetFileName(pathLine.Trim());
+        var fileName = pathLine.Trim();
+        var lastSep = Math.Max(fileName.LastIndexOf('\\'), fileName.LastIndexOf('/'));
+        if (lastSep >= 0)
+            fileName = fileName[(lastSep + 1)..];
+
+        var dot = fileName.LastIndexOf('.');
+        if (dot > 0)
+            fileName = fileName[..dot];
         if (fileName.Length == 0)
             return null;
-        fileName = Path.ChangeExtension(fileName, string.Empty).TrimEnd('.');
 
         var sep = fileName.IndexOf(" - ", StringComparison.Ordinal);
         if (sep <= 0 || sep >= fileName.Length - 3)
