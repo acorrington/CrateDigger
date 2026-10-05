@@ -29,14 +29,19 @@ builds a native Emby playlist.
 
 - 🎛 **Dashboard config page** — API key, endpoint, model, match threshold, playlist length
 - 💬 **Prompt box** — "Upbeat 80s synth music for working out"
+- 📡 **Seed-playlist trigger (v0.2.0)** — from *any* Emby app (phone, web, TV):
+  song → **⋯ → Add to playlist → `CrateDigger Seeds`**; a scheduled task (default every
+  3 min) turns the seeds into a fresh timestamped playlist and empties the queue.
+  Watch it under **Dashboard → Scheduled Tasks → CrateDigger**.
 - 📊 **Live staged status** — *Analyzing library… → Thinking… → Matching tracks… → Creating playlist…*
-- 🧠 **Any OpenAI-compatible endpoint** — OpenAI, Ollama, LM Studio, OpenRouter
+- 🧠 **Any OpenAI-compatible endpoint** — OpenAI, Ollama, LM Studio, OpenRouter, Unsloth
 - 🧩 **Fuzzy matching** — typo/diacritics/decoration-tolerant resolution of AI suggestions to your
-  real tracks (never invents items that aren't in the library)
+  real tracks (never invents items that aren't in the library), with truncation salvage +
+  one reinforced retry against flaky model output
 - 🪜 **Scales to big libraries** — ≤300 tracks embedded verbatim; larger libraries go through an
   artist-shortlist pass first, then a summary-based prompt
-- ✅ **43 unit tests** covering matching (UT-001), parser robustness (UT-002), prompt building,
-  and the full pipeline against a fake LLM
+- ✅ **58 unit tests** covering matching (UT-001), parser robustness (UT-002), prompts,
+  payload building, m3u seed parsing, and the full pipeline against a fake LLM
 
 ## Repository layout
 

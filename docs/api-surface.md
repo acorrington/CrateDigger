@@ -35,6 +35,10 @@ Sources of truth used during discovery:
 | 17 | Dashboard page discovery | `GET /web/ConfigurationPages` lists plugin pages (built from `IHasWebPages.GetPages()` via `WebAppService.GetPluginPages`); `GET /web/ConfigurationPage?name=cratedigger` serves the HTML. Plugins → CrateDigger → Settings works; `EnableInMainMenu=true` also adds the Settings-menu entry. | ✅ curl-verified |
 | 18 | Client auth for tests | `POST /Users/AuthenticateByName` with header `Authorization: MediaBrowser Client="..", Device="..", DeviceId="..", Version=".."` and **form-encoded** `Username`/`Pw` (JSON body does not bind) → `AccessToken`; send as `X-Emby-Token` | ✅ |
 | 19 | Plugins-page thumbnail | implement `MediaBrowser.Common.Plugins.IHasThumbImage` on the plugin class: `ImageFormat ThumbImageFormat` (`MediaBrowser.Model.Drawing.ImageFormat.Png`) + `Stream GetThumbImage()` returning an embedded resource. The handler has **no null-guard** — without the interface `GET /Plugins/{Id}/Thumb` returns **500 NRE** (verified live); first-party plugins (MBBackup) implement it and embed `{Namespace}.thumb.png` | ✅ 200 image/png |
+| 20 | Scheduled tasks | `MediaBrowser.Model.Tasks.IScheduledTask` = `Name/Key/Description/Category` + `Task Execute(CancellationToken, IProgress<double>)` + `IEnumerable<TaskTriggerInfo> GetDefaultTriggers()`; interval trigger = `{ Type = "IntervalTrigger", IntervalTicks = TimeSpan.FromMinutes(n).Ticks }`; auto-discovered like entry points; **run manually via `POST /ScheduledTasks/Running/{Id}` where Id = the GUID `Id` field from `GET /ScheduledTasks`** — NOT Key, NOT Name (404 "Task not found" otherwise) | ✅ E2E run |
+| 21 | m3u-backed playlists are NOT tree-linked | any `InternalItemsQuery` parent scoping (`Parent`, `ParentIds[]`, `TopParentIds[]`, `HasParentId`, ± `SkipAncestorNormalization`) returns **0 children** for playlist items (10-shape diagnostic matrix). REST `?ParentId=` special-cases them server-side. Read playlist contents from the m3u instead: `{programdata}\data\userplaylists\{Name} [playlist]\{Name}.m3u` (programdata derived from `BasePlugin.ConfigurationFilePath`); entries carry `#EXTART`/`#EXTINF` metadata — resolve to library items with the fuzzy matcher, never via paths (they're relative and format-quirky) | ✅ E2E |
+| 22 | Playlist REST DTOs | `AddToPlaylist`/`CreatePlaylist`/`RemoveFromPlaylist` take **comma-separated STRING fields** (`Ids`, `EntryIds` — `System.String`, not arrays!) and this server binds them from **form/query, not JSON bodies** (same quirk as `/Users/AuthenticateByName`): `--data 'Ids=11757,11764'` works, JSON silently binds nothing (`ItemAddedCount:0`) | ✅ empirically |
+| 23 | Service routes & verbs | route lives **on the DTO class** (`[Route(path, verbs)]` + `[Authenticated]` + `IReturn<T>`) and the service method must be **verb-named** (`Get`/`Post` overloads — `GetDiagChildren` never dispatches); `GET /Items` itself accepts query params mirroring `InternalItemsQuery` names | ✅ |
 
 ## Environment facts
 
@@ -50,18 +54,20 @@ Sources of truth used during discovery:
 
 | ID | Test | Result |
 |----|------|--------|
-| UT-001..NN | 50 unit tests (matcher, parser, prompts, payload, pipeline) | ✅ 50/50 |
+| UT-001..NN | 58 unit tests (matcher, parser, prompts, payload, pipeline, m3u seeds) | ✅ 58/58 |
 | ST-001 | POST `/CrateDigger/Create` without token | ✅ 401 |
 | ST-001b | GET `/CrateDigger/Status` without token | ✅ 401 (same guard) |
 | ST-002 | End-to-end generation (mock LLM): 2830-track library → artist shortlist → tracklist → fuzzy match → playlist | ✅ 5/5 matched, playlist `.m3u` written |
 | ST-003 | Real local LLM (Unsloth `unsloth/Qwen3.8-27B-GGUF` @ `localhost:8888/v1`) — "backyard barbecue" prompt | ✅ 57s, playlist "Backyard Rock & Pop", 23/30 matched, 7 hallucinations/absent tracks correctly rejected |
+| ST-004 | Seed-playlist trigger E2E (v0.2.0): 2 seeds added via API → `POST /ScheduledTasks/Running/{Id}` → 265s run → 45-track "CrateDigger Radio 10-05 15:33", 0 unmatched, seeds cleared + playlist recreated | ✅ |
 
 ## LLM integration lessons (local/Unsloth servers)
 
 - `HttpClient.Timeout` defaults to **100s** and silently overrides a larger per-request
   budget — set it to `Timeout.InfiniteTimeSpan` and rely on the configurable CTS only.
 - llama.cpp-family servers default `max_tokens` to **unlimited** — always send a cap
-  (default 8192) or a runaway generation hangs until the timeout.
+  (default 16384 since v0.1.5; 8192 proved too small when qwen rambled → truncation
+  mid-JSON, now also backstopped by truncation salvage + one reinforced parse retry).
 - Reasoning models (Qwen3 etc.) can burn the whole budget thinking; `chat_template_kwargs:
   {"enable_thinking": false}` (configurable as "Extra request JSON") cuts latency sharply.
 - Timeout is **not retried** (a slow local model stays slow) — fail fast with a clear

@@ -104,4 +104,34 @@ public sealed class PromptBuilder
 
     private static string BuildNumberedList(IReadOnlyList<string> items)
         => string.Join('\n', items.Select((item, i) => $"{i + 1}. {item}"));
+
+    // ------------------------------------------------------------------
+    // Seed-playlist trigger (v0.2.0): no free-text prompt — the seed songs
+    // ARE the brief. The caller passes a library with the seeds EXCLUDED, so
+    // the model physically cannot suggest them back.
+    // ------------------------------------------------------------------
+
+    /// <summary>Maximum seed tracks embedded in the prompt (long lists add noise, not signal).</summary>
+    public int MaxSeedTracks { get; init; } = 10;
+
+    /// <summary>Build the "belongs alongside these" prompt from user-chosen seed songs.</summary>
+    public string BuildSeedPrompt(IReadOnlyList<TrackRef> seeds)
+    {
+        var shown = seeds.Take(MaxSeedTracks).ToList();
+        var seedLines = string.Join("; ", shown.Select(s => s.Display));
+        var listed = string.Join('\n', shown.Select(s => string.IsNullOrWhiteSpace(s.Genre)
+            ? $"- {s.Display}"
+            : $"- {s.Display} [{s.Genre}]"));
+        var more = seeds.Count > shown.Count
+            ? $"\n(and {seeds.Count - shown.Count} more seeds not listed)"
+            : string.Empty;
+
+        return
+            $"These tracks from my library are my starting point: {seedLines}.\n\n" +
+            $"Seed tracks in detail:\n{listed}{more}\n\n" +
+            "Pick OTHER tracks from the catalog above that belong alongside them — " +
+            "shared vibe, era, energy, genre; a natural continuation of these seeds, " +
+            "not the same songs again. The seed tracks are intentionally absent from " +
+            "the catalog; never try to include them.";
+    }
 }

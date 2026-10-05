@@ -10,6 +10,18 @@ namespace MediaBrowser.Controller.Library
         BaseItem[] GetItemList(InternalItemsQuery query);
 
         BaseItem? GetItemById(Guid id);
+
+        /// <summary>Verified: used by the seed task to remove the seed playlist.</summary>
+        void DeleteItem(BaseItem item, DeleteOptions options);
+    }
+
+    /// <summary>Verified members (used by seed-task playlist clearing).</summary>
+    public class DeleteOptions
+    {
+        /// <summary>True deletes the playlist's backing folder/m3u (media files untouched).</summary>
+        public bool DeleteFileLocation { get; set; }
+
+        public bool DeleteFromExternalProvider { get; set; }
     }
 
     /// <summary>User lookup (verified: MediaBrowser.Controller.Library.IUserManager).</summary>

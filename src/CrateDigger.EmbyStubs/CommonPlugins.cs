@@ -58,5 +58,12 @@ namespace MediaBrowser.Common.Plugins
         public abstract string Name { get; }
 
         public virtual string Description => Name;
+
+        /// <summary>
+        /// Verified on real BasePlugin&lt;T&gt;: full path of the persisted configuration
+        /// file (...\plugins\configurations\X.xml) — the seed task derives programdata
+        /// from it to locate playlist m3u files.
+        /// </summary>
+        public string ConfigurationFilePath { get; set; } = string.Empty;
     }
 }

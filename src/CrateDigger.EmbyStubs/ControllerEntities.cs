@@ -11,6 +11,28 @@ namespace MediaBrowser.Controller.Entities
         public int? Limit { get; set; }
 
         public bool? IsVirtualItem { get; set; }
+
+        /// <summary>Verified: InternalItemsQuery.ParentIds (Int64[]) — no singular ParentId property.</summary>
+        public long[] ParentIds { get; set; } = Array.Empty<long>();
+
+        /// <summary>
+        /// Verified: direct-parent object reference — THIS is what the working REST
+        /// ?ParentId= form populates (ParentIds[] has different semantics and returns
+        /// nothing for direct playlist children).
+        /// </summary>
+        public BaseItem? Parent { get; set; }
+
+        /// <summary>
+        /// Verified referenced by LibraryManager.SetUserAndParents; true keeps a direct
+        /// Parent constraint from being rewritten into an ancestor-based filter.
+        /// </summary>
+        public bool SkipAncestorNormalization { get; set; }
+
+        /// <summary>Verified: exact-name filter used to locate the seed playlist.</summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>Verified member of InternalItemsQuery (used by diagnostic query modes).</summary>
+        public bool EnableTotalRecordCount { get; set; }
     }
 
     /// <summary>Base type for everything the library manages (verified members).</summary>
@@ -36,6 +58,13 @@ namespace MediaBrowser.Controller.Entities
         public Guid ParentId { get; set; }
 
         public long? RunTimeTicks { get; set; }
+
+        /// <summary>
+        /// Playlist entry id (row id within a playlist) — populated when the item is
+        /// queried as a playlist child; this is what IPlaylistManager.RemoveFromPlaylist
+        /// expects. Verified: BaseItem.ListItemEntryId : Int64 (probe round 17).
+        /// </summary>
+        public long ListItemEntryId { get; set; }
     }
 
     /// <summary>Owning/acting user entity (PlaylistCreationRequest.User).</summary>

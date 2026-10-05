@@ -1,4 +1,4 @@
-<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/cratediggerjs5" data-title="CrateDigger">
+<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/cratediggerjs6" data-title="CrateDigger">
     <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page">
 
         <div class="verticalSection">
@@ -60,6 +60,36 @@
                 </div>
             </div>
         </form>
+
+        <!-- ============ Seed playlist trigger (v0.2.0) ============ -->
+        <div class="verticalSection">
+            <div class="sectionTitle">Seed playlist trigger</div>
+            <div class="fieldDescription" style="margin-bottom:1em;">
+                Use the normal song menu on <b>any</b> Emby app (phone, web, TV):
+                <b>⋯ → Add to playlist → <span class="cdSeedNameEcho">CrateDigger Seeds</span></b>.
+                Every few minutes the scheduled task turns the seeds into a fresh playlist
+                and empties the queue. Status shows under
+                <b>Dashboard → Scheduled Tasks → CrateDigger</b>.
+            </div>
+
+            <label class="emby-checkbox-label" style="display:flex;align-items:center;margin:.6em 0;">
+                <input type="checkbox" is="emby-checkbox" class="cdSeedEnabled" />
+                <span>Enable seed trigger (default: every 3 minutes)</span>
+            </label>
+
+            <div class="inputContainer">
+                <input is="emby-input" type="text" class="cdSeedName" label="Seed playlist name" autocomplete="off" />
+            </div>
+
+            <div class="inputContainer">
+                <input is="emby-input" type="text" class="cdSeedResult" label="Result playlist name (timestamped per run)" autocomplete="off" />
+            </div>
+
+            <label class="emby-checkbox-label" style="display:flex;align-items:center;margin:.6em 0;">
+                <input type="checkbox" is="emby-checkbox" class="cdSeedClear" />
+                <span>Clear seeds after each successful run</span>
+            </label>
+        </div>
 
         <!-- ============ Generation ============ -->
         <div class="verticalSection auto-center" style="max-width:640px;">

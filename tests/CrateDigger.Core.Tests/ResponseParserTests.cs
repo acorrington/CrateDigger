@@ -183,4 +183,54 @@ public class ResponseParserTests
         Assert.Contains("Depeche Mode", artists);
         Assert.Contains("Kraftwerk", artists);
     }
+
+    // ------------------------------------------------------------------
+    // m3u seed parsing (v0.2.0 — real Emby playlist file format)
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void M3u_RealEmbyPlaylist_ParsesAllSeeds()
+    {
+        // Verbatim from Emby 4.10.1.0's generated playlist file.
+        var lines = new[]
+        {
+            "#EXTM3U",
+            "#PLAYLIST:CrateDigger Seeds",
+            "#EXTALB:Depeche Mode - Singles Box 5 (US Release)",
+            "#EXTART:Depeche Mode",
+            "#EXTINF:293,Policy Of Truth",
+            @"..\..\..\..\..\..\..\OneDrive\Music\Depeche Mode\Depeche Mode - Singles Box 5 (US Release)\Depeche Mode - Policy Of Truth.mp3",
+            "#EXTALB:The Best of Depeche Mode, Volume 1",
+            "#EXTART:Depeche Mode",
+            "#EXTINF:253,Enjoy the Silence - 2006 Remaster",
+            @"..\..\..\..\..\..\..\OneDrive\Music\Depeche Mode\The Best of Depeche Mode, Volume 1\Depeche Mode - Enjoy the Silence - 2006 Remaster.mp3",
+        };
+
+        var seeds = CrateDigger.Core.M3uSeedParser.ParseSeeds(lines);
+
+        Assert.Equal(2, seeds.Count);
+        Assert.Equal(("Depeche Mode", "Policy Of Truth"), (seeds[0].Artist, seeds[0].Title));
+        Assert.Equal(("Depeche Mode", "Enjoy the Silence - 2006 Remaster"), (seeds[1].Artist, seeds[1].Title));
+    }
+
+    [Fact]
+    public void M3u_PathOnlyEntry_FallsBackToFilename()
+    {
+        var lines = new[]
+        {
+            "#EXTM3U",
+            @"D:\Music\Some Artist\Some Album\Some Artist - Great Song.mp3",
+        };
+
+        var seeds = CrateDigger.Core.M3uSeedParser.ParseSeeds(lines);
+
+        var s = Assert.Single(seeds);
+        Assert.Equal(("Some Artist", "Great Song"), (s.Artist, s.Title));
+    }
+
+    [Fact]
+    public void M3u_EmptyPlaylist_ReturnsNothing()
+    {
+        Assert.Empty(CrateDigger.Core.M3uSeedParser.ParseSeeds(new[] { "#EXTM3U", "#PLAYLIST:Empty" }));
+    }
 }

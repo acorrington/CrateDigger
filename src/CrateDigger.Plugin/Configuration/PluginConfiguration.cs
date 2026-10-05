@@ -49,7 +49,25 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Optional fallback playlist owner (user Guid). Normally the requesting session's
     /// user is resolved automatically via IAuthorizationContext; this is only used
-    /// when session resolution fails.
+    /// when session resolution fails (and by the seed task, which has no session).
     /// </summary>
     public string OwnerUserId { get; set; } = string.Empty;
+
+    // ------------------------------------------------------------------
+    // Seed-playlist trigger (v0.2.0): the user-facing flow — add songs to
+    // the seed playlist from ANY Emby app's "Add to playlist" menu; the
+    // CrateDiggerSeedTask scheduled task turns them into a fresh playlist.
+    // ------------------------------------------------------------------
+
+    /// <summary>Master switch for the scheduled seed task.</summary>
+    public bool SeedTriggerEnabled { get; set; } = true;
+
+    /// <summary>Playlist the user adds seed songs to (created on demand in any client).</summary>
+    public string SeedPlaylistName { get; set; } = "CrateDigger Seeds";
+
+    /// <summary>Base name for generated results; a timestamp is appended per run.</summary>
+    public string SeedResultName { get; set; } = "CrateDigger Radio";
+
+    /// <summary>Remove seed entries after a successful run (one batch = one playlist).</summary>
+    public bool SeedClearAfterRun { get; set; } = true;
 }

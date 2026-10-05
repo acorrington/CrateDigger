@@ -4,6 +4,7 @@ using CrateDigger.Core.Llm;
 using CrateDigger.Plugin.Configuration;
 using CrateDigger.Plugin.Library;
 using CrateDigger.Plugin.Playlists;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Net;
 using MediaBrowser.Controller.Playlists;

@@ -89,6 +89,11 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
                 config.LlmMaxTokens = 16384;
             }
             config.LlmExtraJson = (view.querySelector('.cdExtraJson').value || '').trim();
+            // seed trigger settings (v0.2.0)
+            config.SeedTriggerEnabled = view.querySelector('.cdSeedEnabled').checked;
+            config.SeedPlaylistName = (view.querySelector('.cdSeedName').value || '').trim() || 'CrateDigger Seeds';
+            config.SeedResultName = (view.querySelector('.cdSeedResult').value || '').trim() || 'CrateDigger Radio';
+            config.SeedClearAfterRun = view.querySelector('.cdSeedClear').checked;
             try {
                 if (config.LlmExtraJson) {
                     JSON.parse(config.LlmExtraJson);
@@ -120,6 +125,13 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             view.querySelector('.cdThreshold').value =
                 typeof config.MatchThreshold === 'number' ? config.MatchThreshold : 0.75;
             view.querySelector('.cdTimeout').value = config.LlmTimeoutSeconds || 300;
+            // seed trigger settings (v0.2.0)
+            view.querySelector('.cdSeedEnabled').checked = config.SeedTriggerEnabled !== false;
+            view.querySelector('.cdSeedName').value = config.SeedPlaylistName || 'CrateDigger Seeds';
+            view.querySelector('.cdSeedResult').value = config.SeedResultName || 'CrateDigger Radio';
+            view.querySelector('.cdSeedClear').checked = config.SeedClearAfterRun !== false;
+            var echo = view.querySelector('.cdSeedNameEcho');
+            if (echo) echo.textContent = view.querySelector('.cdSeedName').value || 'CrateDigger Seeds';
             view.querySelector('.cdMaxTokens').value = typeof config.LlmMaxTokens === 'number' ? config.LlmMaxTokens : 16384;
             view.querySelector('.cdExtraJson').value = config.LlmExtraJson || '';
         }, responseHelper.handleErrorResponse);

@@ -30,11 +30,15 @@ public sealed class LibraryExtractor
 
         return items
             .Where(item => !string.IsNullOrWhiteSpace(item.Name))
-            .Select(Map)
+            .Select(MapItem)
             .ToList();
     }
 
-    private static LibraryTrack Map(BaseItem item)
+    /// <summary>
+    /// Maps one library item to Core's shape. Internal (not private) so the seed task
+    /// can map playlist children without re-querying the whole library.
+    /// </summary>
+    internal static LibraryTrack MapItem(BaseItem item)
     {
         // Artists live on the Audio subtype (IHasArtist / IHasAlbumArtist), not BaseItem.
         string? artist = null;
