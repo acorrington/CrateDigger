@@ -43,8 +43,11 @@ builds a native Emby playlist.
   one reinforced retry against flaky model output
 - 🪜 **Scales to big libraries** — ≤300 tracks embedded verbatim; larger libraries go through an
   artist-shortlist pass first, then a summary-based prompt
-- ✅ **58 unit tests** covering matching (UT-001), parser robustness (UT-002), prompts,
-  payload building, m3u seed parsing, and the full pipeline against a fake LLM
+- ✅ **66 unit tests** covering matching (UT-001), parser robustness (UT-002), prompts,
+  payload building, m3u seed parsing (audio + video), and the full pipeline against a fake LLM
+- 🎬 **Music video mode (v0.3.0)** — same trigger for `MusicVideo` items; catalog enriched
+  with year/genre when present; playlist created with `MediaType=Video`; works with videos
+  downloaded by the Reel plugin (artist-linked, `Artist - Title` named)
 
 ## Repository layout
 
