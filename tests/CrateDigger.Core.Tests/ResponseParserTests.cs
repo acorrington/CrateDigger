@@ -233,4 +233,81 @@ public class ResponseParserTests
     {
         Assert.Empty(CrateDigger.Core.M3uSeedParser.ParseSeeds(new[] { "#EXTM3U", "#PLAYLIST:Empty" }));
     }
+
+    // ------------------------------------------------------------------
+    // Video m3u reality (v0.3.0 — Emby writes NO #EXTART for video playlists;
+    // titles typically carry "Artist - Title"):
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void M3u_VideoEntry_NoExtArt_SplitsArtistFromTitle()
+    {
+        var lines = new[]
+        {
+            "#EXTM3U",
+            "#PLAYLIST:CD Video Probe",
+            "#EXTINF:243,38 Special - Back Where You Belong - Edited Version",
+            @"E:\Emby Server\Music Videos\38 Special - Back Where You Belong - Edited Version.mp4",
+        };
+
+        var seeds = CrateDigger.Core.M3uSeedParser.ParseSeeds(lines);
+
+        var s = Assert.Single(seeds);
+        Assert.Equal("38 Special", s.Artist);
+        Assert.Equal("Back Where You Belong - Edited Version", s.Title);
+    }
+
+    [Fact]
+    public void M3u_TitleRepeatingArtist_StripsDuplicatePrefix()
+    {
+        // EXTART present AND the EXTINF title repeats it (audio playlist real-world case).
+        var lines = new[]
+        {
+            "#EXTM3U",
+            "#EXTART:Depeche Mode",
+            "#EXTINF:293,Depeche Mode - Policy Of Truth",
+            @"D:\Music\dm.mp3",
+        };
+
+        var seeds = CrateDigger.Core.M3uSeedParser.ParseSeeds(lines);
+
+        var s = Assert.Single(seeds);
+        Assert.Equal("Depeche Mode", s.Artist);
+        Assert.Equal("Policy Of Truth", s.Title);
+    }
+
+    [Fact]
+    public void M3u_VideoTitleWithoutDash_StaysWholeTitle()
+    {
+        var lines = new[]
+        {
+            "#EXTM3U",
+            "#EXTINF:180,Some Live Concert Footage",
+            @"E:\mv\Some Live Concert Footage.mp4",
+        };
+
+        var seeds = CrateDigger.Core.M3uSeedParser.ParseSeeds(lines);
+
+        var s = Assert.Single(seeds);
+        Assert.Equal(string.Empty, s.Artist);
+        Assert.Equal("Some Live Concert Footage", s.Title);
+    }
+
+    [Fact]
+    public void M3u_DoubleArtistPrefix_StripsDuplicate()
+    {
+        // Real production case: "Foreigner - Foreigner - I Want To Know What Love Is"
+        var lines = new[]
+        {
+            "#EXTM3U",
+            "#EXTINF:293,Foreigner - Foreigner - I Want To Know What Love Is (Remastered)",
+            @"E:\Emby Server\Music Videos\Foreigner - I Want To Know What Love Is.mp4",
+        };
+
+        var seeds = CrateDigger.Core.M3uSeedParser.ParseSeeds(lines);
+
+        var s = Assert.Single(seeds);
+        Assert.Equal("Foreigner", s.Artist);
+        Assert.Equal("I Want To Know What Love Is (Remastered)", s.Title);
+    }
 }

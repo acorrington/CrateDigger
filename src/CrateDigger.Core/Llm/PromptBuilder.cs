@@ -66,11 +66,11 @@ public sealed class PromptBuilder
             new LlmMessage("user", user));
     }
 
-    private static string BuildFullCatalog(IReadOnlyList<LibraryTrack> catalog)
+    private string BuildFullCatalog(IReadOnlyList<LibraryTrack> catalog)
     {
         var lines = new List<string>(catalog.Count);
         for (var i = 0; i < catalog.Count; i++)
-            lines.Add($"{i + 1}. {catalog[i].Track.Display}");
+            lines.Add($"{i + 1}. {CatalogLine(catalog[i].Track)}");
         return $"My library tracks ({catalog.Count}):\n" + string.Join('\n', lines);
     }
 
@@ -105,23 +105,32 @@ public sealed class PromptBuilder
     private static string BuildNumberedList(IReadOnlyList<string> items)
         => string.Join('\n', items.Select((item, i) => $"{i + 1}. {item}"));
 
+    /// <summary>Catalog line rendering: plain display, or enriched when IncludeCatalogDetails.</summary>
+    internal string CatalogLine(TrackRef track)
+        => IncludeCatalogDetails ? $"{track.Display}{track.DetailSuffix}" : track.Display;
+
     // ------------------------------------------------------------------
     // Seed-playlist trigger (v0.2.0): no free-text prompt — the seed songs
     // ARE the brief. The caller passes a library with the seeds EXCLUDED, so
     // the model physically cannot suggest them back.
     // ------------------------------------------------------------------
 
-    /// <summary>Maximum seed tracks embedded in the prompt (long lists add noise, not signal).</summary>
+    /// <summary>Maximum tracks embedded in the prompt (long lists add noise, not signal).</summary>
     public int MaxSeedTracks { get; init; } = 10;
+
+    /// <summary>
+    /// v0.3.0: append (year) and [genre] detail to CATALOG lines when the fields exist.
+    /// Off for the proven audio path; on for video mode, where year/genre is often the
+    /// only disambiguation beyond the title (music videos lack album metadata).
+    /// </summary>
+    public bool IncludeCatalogDetails { get; init; }
 
     /// <summary>Build the "belongs alongside these" prompt from user-chosen seed songs.</summary>
     public string BuildSeedPrompt(IReadOnlyList<TrackRef> seeds)
     {
         var shown = seeds.Take(MaxSeedTracks).ToList();
         var seedLines = string.Join("; ", shown.Select(s => s.Display));
-        var listed = string.Join('\n', shown.Select(s => string.IsNullOrWhiteSpace(s.Genre)
-            ? $"- {s.Display}"
-            : $"- {s.Display} [{s.Genre}]"));
+        var listed = string.Join('\n', shown.Select(s => $"- {s.Display}{s.DetailSuffix}"));
         var more = seeds.Count > shown.Count
             ? $"\n(and {seeds.Count - shown.Count} more seeds not listed)"
             : string.Empty;

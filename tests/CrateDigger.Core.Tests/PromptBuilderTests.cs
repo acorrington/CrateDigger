@@ -65,4 +65,79 @@ public class PromptBuilderTests
         var system = request.Messages.Single(m => m.Role == "system").Content;
         Assert.Contains("JSON only", system);
     }
+
+    // ------------------------------------------------------------------
+    // Seed prompt (v0.2.0 — the "add a song from any device" trigger)
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void SeedPrompt_ListsSeedsWithGenres_AndExcludesRule()
+    {
+        var builder = new PromptBuilder();
+        var seeds = new List<TrackRef>
+        {
+            new("Depeche Mode", "Personal Jesus", null, "synth pop"),
+            new("New Order", "Blue Monday"),
+        };
+
+        var prompt = builder.BuildSeedPrompt(seeds);
+
+        Assert.Contains("Depeche Mode - Personal Jesus", prompt);
+        Assert.Contains("synth pop", prompt);
+        Assert.Contains("New Order - Blue Monday", prompt);
+        Assert.Contains("intentionally absent", prompt);
+    }
+
+    [Fact]
+    public void SeedPrompt_CapsEmbeddedSeeds_ButAcknowledgesRest()
+    {
+        var builder = new PromptBuilder { MaxSeedTracks = 3 };
+        var seeds = Enumerable.Range(1, 7)
+            .Select(i => new TrackRef($"Artist {i}", $"Song {i}"))
+            .ToList();
+
+        var prompt = builder.BuildSeedPrompt(seeds);
+
+        Assert.Contains("Artist 3 - Song 3", prompt);
+        Assert.DoesNotContain("Artist 4 - Song 4", prompt);
+        Assert.Contains("4 more seeds not listed", prompt);
+    }
+
+    // ------------------------------------------------------------------
+    // Video-mode enrichment (v0.3.0)
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void SeedPrompt_ShowsYear_WhenPresent_NoEmptyParens()
+    {
+        var builder = new PromptBuilder();
+        var seeds = new List<TrackRef>
+        {
+            new("a-ha", "Take On Me", null, null, 1985),
+            new("Some Artist", "Plain Title"),
+        };
+
+        var prompt = builder.BuildSeedPrompt(seeds);
+
+        Assert.Contains("Take On Me (1985)", prompt);
+        Assert.Contains("Plain Title", prompt);
+        Assert.DoesNotContain("Plain Title ()", prompt);
+    }
+
+    [Fact]
+    public void CatalogDetails_OffByDefault_OnForVideoMode()
+    {
+        var track = new TrackRef("38 Special", "Hold On Loosely", null, "southern rock", 1981);
+        var catalog = new List<LibraryTrack> { new("1", track) };
+
+        var audioPrompt = new PromptBuilder().BuildTrackRequest("x", catalog, 5);
+        var videoPrompt = new PromptBuilder { IncludeCatalogDetails = true }.BuildTrackRequest("x", catalog, 5);
+
+        var audioUser = audioPrompt.Messages.Single(m => m.Role == "user").Content;
+        var videoUser = videoPrompt.Messages.Single(m => m.Role == "user").Content;
+
+        Assert.Contains("38 Special - Hold On Loosely", audioUser);
+        Assert.DoesNotContain("1981", audioUser); // proven audio catalog stays lean
+        Assert.Contains("38 Special - Hold On Loosely (1981 · southern rock)", videoUser);
+    }
 }

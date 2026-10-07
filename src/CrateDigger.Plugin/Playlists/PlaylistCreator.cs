@@ -20,11 +20,13 @@ public sealed class PlaylistCreator
         _logger = logger;
     }
 
-    /// <summary>Create a native playlist containing <paramref name="tracks"/> in order.</summary>
+    /// <summary>Create a native playlist containing <paramref name="tracks"/> in order.
+    /// <paramref name="mediaType"/> must match the items: "Audio" or "Video" (v0.3.0).</summary>
     public async Task<string> CreateAsync(
         string name,
         IReadOnlyList<LibraryTrack> tracks,
-        User owner)
+        User owner,
+        string mediaType = "Audio")
     {
         var ids = new long[tracks.Count];
         for (var i = 0; i < tracks.Count; i++)
@@ -40,11 +42,11 @@ public sealed class PlaylistCreator
         {
             Name = name,
             ItemIdList = ids,
-            MediaType = "Audio",
+            MediaType = mediaType,
             User = owner,
         }).ConfigureAwait(false);
 
-        _logger.Info("Created playlist '{0}' ({1}) with {2} tracks", result.Name, result.Id, result.ItemAddedCount);
+        _logger.Info("Created playlist '{0}' ({1}) with {2} items", result.Name, result.Id, result.ItemAddedCount);
         return result.Id;
     }
 }

@@ -1,4 +1,4 @@
-<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/cratediggerjs7" data-title="CrateDigger">
+<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/cratediggerjs8" data-title="CrateDigger">
     <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page">
 
         <div class="verticalSection">
@@ -65,11 +65,13 @@
         <div class="verticalSection">
             <div class="sectionTitle">Seed playlist trigger</div>
             <div class="fieldDescription" style="margin-bottom:1em;">
-                Use the normal song menu on <b>any</b> Emby app (phone, web, TV):
-                <b>⋯ → Add to playlist → <span class="cdSeedNameEcho">CrateDigger Seeds</span></b>.
-                Every few minutes the scheduled task turns the seeds into a fresh playlist
-                and empties the queue. Status shows under
-                <b>Dashboard → Scheduled Tasks → CrateDigger</b>.
+                Use the normal item menu on <b>any</b> Emby app (phone, web, TV):
+                <b>⋯ → Add to playlist → your seed playlist</b>. After a quiet window the
+                scheduled task turns the seeds into a fresh playlist and empties the queue.
+                Two queues exist because Emby playlists are single-type:
+                <b>songs → <span class="cdSeedNameEcho">CrateDigger Seeds</span></b> (audio),
+                <b>videos → <span class="cdSeedNameVideoEcho">CrateDigger Video Seeds</span></b> (music videos).
+                Status shows under <b>Dashboard → Scheduled Tasks → CrateDigger</b>.
             </div>
 
             <label class="emby-checkbox-label" style="display:flex;align-items:center;margin:.6em 0;">
@@ -82,7 +84,17 @@
             </div>
 
             <div class="inputContainer">
-                <input is="emby-input" type="text" class="cdSeedResult" label="Result playlist name (timestamped per run)" autocomplete="off" />
+                <input is="emby-input" type="text" class="cdSeedResult" label="Audio result playlist name (timestamped per run)" autocomplete="off" />
+            </div>
+
+            <div class="sectionTitle" style="margin-top:1em;">Music video queue (v0.3.0)</div>
+
+            <div class="inputContainer">
+                <input is="emby-input" type="text" class="cdSeedNameVideo" label="Video seed playlist name (empty = off)" autocomplete="off" />
+            </div>
+
+            <div class="inputContainer">
+                <input is="emby-input" type="text" class="cdSeedResultVideo" label="Video result playlist name (timestamped per run)" autocomplete="off" />
             </div>
 
             <label class="emby-checkbox-label" style="display:flex;align-items:center;margin:.6em 0;">

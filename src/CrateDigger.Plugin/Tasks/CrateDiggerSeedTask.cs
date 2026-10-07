@@ -39,10 +39,11 @@ public class CrateDiggerSeedTask : IScheduledTask
     {
         get
         {
-            var seedName = CrateDiggerPlugin.Instance?.Configuration?.SeedPlaylistName ?? "CrateDigger Seeds";
-            var resultName = CrateDiggerPlugin.Instance?.Configuration?.SeedResultName ?? "CrateDigger Radio";
-            return $"Backstop for the seed flow: scans '{seedName}' every few minutes and generates " +
-                   $"a '{resultName}' playlist if one is pending (the event debounce normally gets there first).";
+            var cfg = CrateDiggerPlugin.Instance?.Configuration;
+            var audioName = string.IsNullOrWhiteSpace(cfg?.SeedPlaylistName) ? "(audio off)" : cfg!.SeedPlaylistName;
+            var videoName = string.IsNullOrWhiteSpace(cfg?.SeedPlaylistNameVideo) ? "(video off)" : cfg!.SeedPlaylistNameVideo;
+            return $"Backstop for both seed queues — audio: '{audioName}', video: '{videoName}'. " +
+                   "Scans every few minutes if one is pending (the event debounce normally gets there first).";
         }
     }
 
@@ -69,7 +70,13 @@ public class CrateDiggerSeedTask : IScheduledTask
         var pipeline = new SeedPipeline(_libraryManager, _playlistManager, _userManager, _logger);
         try
         {
-            await pipeline.RunAsync(config, progress, cancellationToken).ConfigureAwait(false);
+            // v0.3.0: both queues per tick — each mode no-ops fast when its
+            // playlist is absent or empty (gate protects cross-mode overlap).
+            foreach (var mode in SeedMode.GetModes(config))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await pipeline.RunAsync(mode, config, progress, cancellationToken).ConfigureAwait(false);
+            }
         }
         finally
         {

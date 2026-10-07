@@ -59,6 +59,9 @@ namespace MediaBrowser.Controller.Entities
 
         public long? RunTimeTicks { get; set; }
 
+        /// <summary>Verified: BaseItem.ProductionYear is Nullable&lt;int&gt; (music videos often null).</summary>
+        public int? ProductionYear { get; set; }
+
         /// <summary>
         /// Playlist entry id (row id within a playlist) — populated when the item is
         /// queried as a playlist child; this is what IPlaylistManager.RemoveFromPlaylist
@@ -90,5 +93,19 @@ namespace MediaBrowser.Controller.Entities.Audio
         public string[] Artists { get; set; } = Array.Empty<string>();
 
         public string[] AlbumArtists { get; set; } = Array.Empty<string>();
+    }
+}
+
+namespace MediaBrowser.Controller.Entities
+{
+    /// <summary>
+    /// Verified: MediaBrowser.Controller.Entities.MusicVideo (base: Video); declares
+    /// string[] Artists — populated by the Reel plugin's artist linking (v0.3.0).
+    /// </summary>
+    public class MusicVideo : BaseItem
+    {
+        public string[] Artists { get; set; } = Array.Empty<string>();
+
+        public string[] Composers { get; set; } = Array.Empty<string>();
     }
 }

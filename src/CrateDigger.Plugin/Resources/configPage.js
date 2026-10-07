@@ -98,6 +98,9 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             config.SeedDebounceSeconds = parseInt(view.querySelector('.cdSeedDebounceSec').value, 10) || 60;
             if (config.SeedDebounceSeconds < 5) config.SeedDebounceSeconds = 5;
             if (config.SeedDebounceSeconds > 3600) config.SeedDebounceSeconds = 3600;
+            // music video queue (v0.3.0)
+            config.SeedPlaylistNameVideo = (view.querySelector('.cdSeedNameVideo').value || '').trim();
+            config.SeedResultNameVideo = (view.querySelector('.cdSeedResultVideo').value || '').trim() || 'CrateDigger Video Radio';
             try {
                 if (config.LlmExtraJson) {
                     JSON.parse(config.LlmExtraJson);
@@ -136,6 +139,11 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             view.querySelector('.cdSeedClear').checked = config.SeedClearAfterRun !== false;
             view.querySelector('.cdSeedDebounce').checked = config.SeedDebounceEnabled !== false;
             view.querySelector('.cdSeedDebounceSec').value = config.SeedDebounceSeconds || 60;
+            // music video queue (v0.3.0)
+            view.querySelector('.cdSeedNameVideo').value = config.SeedPlaylistNameVideo || 'CrateDigger Video Seeds';
+            view.querySelector('.cdSeedResultVideo').value = config.SeedResultNameVideo || 'CrateDigger Video Radio';
+            var echoV = view.querySelector('.cdSeedNameVideoEcho');
+            if (echoV) echoV.textContent = view.querySelector('.cdSeedNameVideo').value || 'CrateDigger Video Seeds';
             var echo = view.querySelector('.cdSeedNameEcho');
             if (echo) echo.textContent = view.querySelector('.cdSeedName').value || 'CrateDigger Seeds';
             view.querySelector('.cdMaxTokens').value = typeof config.LlmMaxTokens === 'number' ? config.LlmMaxTokens : 16384;

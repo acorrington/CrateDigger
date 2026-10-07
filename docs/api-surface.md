@@ -40,6 +40,7 @@ Sources of truth used during discovery:
 | 22 | Playlist REST DTOs | `AddToPlaylist`/`CreatePlaylist`/`RemoveFromPlaylist` take **comma-separated STRING fields** (`Ids`, `EntryIds` — `System.String`, not arrays!) and this server binds them from **form/query, not JSON bodies** (same quirk as `/Users/AuthenticateByName`): `--data 'Ids=11757,11764'` works, JSON silently binds nothing (`ItemAddedCount:0`) | ✅ empirically |
 | 23 | Service routes & verbs | route lives **on the DTO class** (`[Route(path, verbs)]` + `[Authenticated]` + `IReturn<T>`) and the service method must be **verb-named** (`Get`/`Post` overloads — `GetDiagChildren` never dispatches); `GET /Items` itself accepts query params mirroring `InternalItemsQuery` names | ✅ |
 | 24 | Playlist change events | `IPlaylistManager.PlaylistItemsAdded/Removed/Moved` exist (subscribe from an entry point); **Added args carry ONLY `Playlist`** (no entry ids) while Removed/Moved also carry `ListItemEntryIds : Int64[]`. CrateDigger v0.2.1 debounces Added on the seed playlist: each add cancels+rearms a quiet-window timer (`SeedDebounceSeconds`, default 60), a shared `SemaphoreSlim` gate stops overlap with the interval backstop, and clear-step re-reads the m3u so seeds added mid-run are kept, never wiped | ✅ E2E |
+| 25 | MusicVideo items (v0.3.0) | `MediaBrowser.Controller.Entities.MusicVideo : Video` (NOT in `.Audio` namespace); declares `string[] Artists` (populated by Reel's artist-link); `BaseItem.ProductionYear` is `Nullable<int>`, `Tags`/`Studios` are `string[]`, **no `Directors` on BaseItem**. Video playlist m3u has **no `#EXTART`** — only `#EXTINF:title` + path; title carries `Artist - Title`, parser splits first `" - "` and strips a double-artist prefix (e.g. `Foreigner - Foreigner - …`). Playlist creation for videos needs `MediaType="Video"` (not `"Audio"`); two seed queues (audio + video) because Emby playlists are single-media-type | ✅ E2E: 34-item video playlist from 2 seeds |
 
 ## Environment facts
 
@@ -55,13 +56,14 @@ Sources of truth used during discovery:
 
 | ID | Test | Result |
 |----|------|--------|
-| UT-001..NN | 58 unit tests (matcher, parser, prompts, payload, pipeline, m3u seeds) | ✅ 58/58 |
+| UT-001..NN | 66 unit tests (matcher, parser, prompts, payload, pipeline, m3u audio+video) | ✅ 66/66 |
 | ST-001 | POST `/CrateDigger/Create` without token | ✅ 401 |
 | ST-001b | GET `/CrateDigger/Status` without token | ✅ 401 (same guard) |
 | ST-002 | End-to-end generation (mock LLM): 2830-track library → artist shortlist → tracklist → fuzzy match → playlist | ✅ 5/5 matched, playlist `.m3u` written |
 | ST-003 | Real local LLM (Unsloth `unsloth/Qwen3.8-27B-GGUF` @ `localhost:8888/v1`) — "backyard barbecue" prompt | ✅ 57s, playlist "Backyard Rock & Pop", 23/30 matched, 7 hallucinations/absent tracks correctly rejected |
 | ST-004 | Seed-playlist trigger E2E (v0.2.0): 2 seeds added via API → `POST /ScheduledTasks/Running/{Id}` → 265s run → 45-track "CrateDigger Radio 10-05 15:33", 0 unmatched, seeds cleared + playlist recreated | ✅ |
 | ST-005 | Debounce E2E (v0.2.1): add A → 6s → add B → timer re-armed (log proof), quiet window elapsed exactly 10.0s after **B** (not A), run gated against a concurrent interval-task tick ("already in progress"), result: 45 tracks, seeds cleared | ✅ |
+| ST-006 | Video seed E2E (v0.3.0): 2 MusicVideo seeds (38 Special) → `Seed run (Video)` → 34-item video playlist (Foreigner/KISS/Journey/Queen), `MediaType=Video`, seeds cleared; debounce+interval gate proved (double-trigger → one skipped); 11/45 unmatched honestly reported (videos Reel hasn't downloaded yet) | ✅ |
 
 ## LLM integration lessons (local/Unsloth servers)
 

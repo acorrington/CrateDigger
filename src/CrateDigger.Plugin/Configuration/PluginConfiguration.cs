@@ -81,4 +81,16 @@ public class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Quiet window in seconds before a debounced run starts (5–3600).</summary>
     public int SeedDebounceSeconds { get; set; } = 60;
+
+    // ------------------------------------------------------------------
+    // Video seed queue (v0.3.0): Emby playlists are single-media-type, so
+    // music-video seeds live in their own playlist with their own result
+    // name. Both queues are watched by the same triggers. Empty name = off.
+    // ------------------------------------------------------------------
+
+    /// <summary>Seed playlist for music videos (created on demand in any client).</summary>
+    public string SeedPlaylistNameVideo { get; set; } = "CrateDigger Video Seeds";
+
+    /// <summary>Base name for generated video results; timestamped per run.</summary>
+    public string SeedResultNameVideo { get; set; } = "CrateDigger Video Radio";
 }

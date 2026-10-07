@@ -75,13 +75,13 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
     /// cache-busting query only reflects the SERVER version, so plugin updates keep the same
     /// URL and stale browser copies can linger. Bump these names (and the matching
     /// data-controller in configPage.html) on releases when cache issues appear.
-    /// Current generation: v7 (seed debounce: event-driven runs with reset-on-add quiet window).
+    /// Current generation: v8 (dual seed queues: audio + music video, v0.3.0).
     /// </summary>
     public IEnumerable<PluginPageInfo> GetPages()
     {
         yield return new PluginPageInfo
         {
-            Name = "cratedigger7",
+            Name = "cratedigger8",
             DisplayName = "CrateDigger",
             EnableInMainMenu = true,
             MenuSection = "settings",
@@ -91,7 +91,7 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
 
         yield return new PluginPageInfo
         {
-            Name = "cratediggerjs7",
+            Name = "cratediggerjs8",
             EmbeddedResourcePath = GetType().Namespace + ".Resources.configPage.js",
         };
     }
@@ -131,8 +131,10 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
             var config = Configuration;
             if (!config.SeedTriggerEnabled || !config.SeedDebounceEnabled)
                 return;
-            if (e?.Playlist == null ||
-                !string.Equals(e.Playlist.Name, config.SeedPlaylistName, StringComparison.Ordinal))
+            // v0.3.0: match against BOTH configured queues (audio + video) — the matched
+            // mode decides the whole pipeline. Tolerant: trimmed + case-insensitive.
+            var mode = SeedMode.Match(e?.Playlist?.Name, config);
+            if (mode == null || e?.Playlist == null)
                 return;
 
             var seconds = Math.Clamp(config.SeedDebounceSeconds, 5, 3600);
@@ -144,8 +146,8 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
                 _debounceCts = cts = new CancellationTokenSource();
             }
 
-            _logger.Info("Seed debounce: item(s) added to '{0}' — starting run in {1}s (timer resets on each add)",
-                e.Playlist.Name, seconds);
+            _logger.Info("Seed debounce: item(s) added to '{0}' ({1} mode) — starting run in {2}s (timer resets on each add)",
+                e.Playlist.Name, mode.MediaType, seconds);
 
             _ = Task.Run(async () =>
             {
@@ -158,11 +160,11 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
                     return; // a newer add reset the quiet window — that timer owns the run
                 }
 
-                _logger.Info("Seed debounce: quiet window elapsed — starting run.");
+                _logger.Info("Seed debounce: quiet window elapsed — starting {0} run.", mode.MediaType);
                 var pipeline = new SeedPipeline(_libraryManager, _playlistManager, _userManager, _logger);
                 try
                 {
-                    await pipeline.RunAsync(Configuration, null, CancellationToken.None).ConfigureAwait(false);
+                    await pipeline.RunAsync(mode, Configuration, null, CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

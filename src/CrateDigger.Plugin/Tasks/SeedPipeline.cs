@@ -6,7 +6,6 @@ using CrateDigger.Plugin.Configuration;
 using CrateDigger.Plugin.Library;
 using CrateDigger.Plugin.Playlists;
 using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Playlists;
 using MediaBrowser.Model.Logging;
@@ -15,19 +14,22 @@ using MediaBrowser.Model.Querying;
 namespace CrateDigger.Plugin.Tasks;
 
 /// <summary>
-/// The seed→playlist run itself, shared by BOTH triggers:
-///   * CrateDiggerSeedTask     (3-minute interval backstop)
-///   * CrateDiggerPlugin       (PlaylistItemsAdded debounce, v0.2.1)
+/// The seed→playlist run itself, shared by BOTH triggers and BOTH media modes:
+///   * CrateDiggerSeedTask     (3-minute interval backstop, iterates all modes)
+///   * CrateDiggerPlugin       (PlaylistItemsAdded debounce, mode picked by playlist name)
 ///
 /// Design notes (all live-verified on 4.10.1.0):
 ///  - Children come from the playlist's m3u metadata — m3u-backed playlists are
-///    NOT tree-linked, so every InternalItemsQuery parent scoping returns 0.
-///  - Seeds are fuzzy-resolved against the audio catalog; the catalog passed to
-///    generation EXCLUDES them, so the model cannot suggest them back.
-///  - Clearing = delete + recreate (RemoveFromPlaylist needs REST-only entry ids),
-///    guarded by a mid-run re-read: if NEW seeds arrived during generation they are
-///    kept for the next batch instead of being wiped.
-///  - A single non-blocking gate prevents concurrent runs from the two triggers.
+///    NOT tree-linked, so every InternalItemsQuery parent scoping returns 0 for them.
+///  - Video playlists write m3u WITHOUT #EXTART (title-only) — M3uSeedParser splits
+///    "Artist - Title" from the EXTINF title and strips a repeated artist prefix.
+///  - Seeds are fuzzy-resolved against the catalog (matching the mode's item types);
+///    the catalog passed to generation EXCLUDES them, so the model cannot suggest
+///    them back.
+///  - Clearing = delete + recreate with the mode's MediaType (RemoveFromPlaylist
+///    needs REST-only entry ids), guarded by a mid-run re-read: if NEW seeds arrived
+///    during generation they are kept for the next batch instead of being wiped.
+///  - A single non-blocking gate prevents concurrent runs across triggers/modes.
 /// </summary>
 public sealed class SeedPipeline
 {
@@ -47,17 +49,21 @@ public sealed class SeedPipeline
     }
 
     /// <summary>Returns false when there was nothing to do (or another run holds the gate).</summary>
-    public async Task<bool> RunAsync(PluginConfiguration config, IProgress<double>? progress, CancellationToken cancellationToken)
+    public async Task<bool> RunAsync(
+        SeedMode mode,
+        PluginConfiguration config,
+        IProgress<double>? progress,
+        CancellationToken cancellationToken)
     {
         if (!Gate.Wait(0, cancellationToken))
         {
-            _logger.Info("Seed run: already in progress — skipping this trigger.");
+            _logger.Info("Seed run ({0}): already in progress — skipping this trigger.", mode.MediaType);
             return false;
         }
 
         try
         {
-            return await RunCoreAsync(config, progress, cancellationToken).ConfigureAwait(false);
+            return await RunCoreAsync(mode, config, progress, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -65,46 +71,54 @@ public sealed class SeedPipeline
         }
     }
 
-    private async Task<bool> RunCoreAsync(PluginConfiguration config, IProgress<double>? progress, CancellationToken cancellationToken)
+    private async Task<bool> RunCoreAsync(
+        SeedMode mode,
+        PluginConfiguration config,
+        IProgress<double>? progress,
+        CancellationToken cancellationToken)
     {
         progress?.Report(2);
 
-        // 1. Locate the seed playlist by name (Name+type query — verified working).
+        // 1. Locate this mode's seed playlist — tolerant match: trimmed, case-insensitive.
         var seedPlaylist = _libraryManager.GetItemList(new InternalItemsQuery
         {
             IncludeItemTypes = new[] { "Playlist" },
-            Name = config.SeedPlaylistName,
             Recursive = true,
-        }).FirstOrDefault();
+        }).FirstOrDefault(p => string.Equals(p.Name?.Trim(), mode.PlaylistName, StringComparison.OrdinalIgnoreCase));
 
         if (seedPlaylist == null)
         {
-            _logger.Debug("Seed run: playlist '{0}' not present — nothing to do.", config.SeedPlaylistName);
+            _logger.Debug("Seed run ({0}): playlist '{1}' not present — nothing to do.", mode.MediaType, mode.PlaylistName);
             return false;
         }
 
         // 2. Read seed metadata from the playlist's m3u (no tree queries).
-        var seedRefs = ReadSeedMetadata(config.SeedPlaylistName);
+        var seedRefs = ReadSeedMetadata(mode.PlaylistName);
         if (seedRefs.Count == 0)
         {
-            _logger.Debug("Seed run: no parseable seeds in '{0}' m3u — nothing to do.", config.SeedPlaylistName);
+            _logger.Debug("Seed run ({0}): no parseable seeds in '{1}' m3u — nothing to do.", mode.MediaType, mode.PlaylistName);
             return false;
         }
 
-        _logger.Info("Seed run: {0} seed(s) read from m3u for '{1}'", seedRefs.Count, config.SeedPlaylistName);
+        _logger.Info("Seed run ({0}): {1} seed(s) read from m3u for '{2}'", mode.MediaType, seedRefs.Count, mode.PlaylistName);
         progress?.Report(8);
         var processedKeys = new HashSet<string>(seedRefs.Select(Key), StringComparer.OrdinalIgnoreCase);
 
-        // 3. One catalog pass: ALL audio items (exclusion + matching universe).
+        // 3. One catalog pass over the mode's item types (exclusion + matching universe).
         var allItems = _libraryManager.GetItemList(new InternalItemsQuery
         {
-            IncludeItemTypes = new[] { nameof(Audio) },
+            IncludeItemTypes = mode.IncludeItemTypes,
             Recursive = true,
         });
         var catalog = allItems
             .Where(i => !string.IsNullOrWhiteSpace(i.Name))
             .Select(LibraryExtractor.MapItem)
             .ToList();
+        if (catalog.Count == 0)
+        {
+            _logger.Warn("Seed run ({0}): no {1} items in the library — aborting.", mode.MediaType, string.Join("/", mode.IncludeItemTypes));
+            return false;
+        }
 
         // 4. Resolve seeds → library items (fuzzy — m3u metadata vs tags may differ).
         var matcher = new FuzzyMatcher();
@@ -112,20 +126,20 @@ public sealed class SeedPipeline
         var seedIdSet = new HashSet<string>(
             resolvedSeeds.Matched.Select(m => m.Match.Id), StringComparer.Ordinal);
         if (seedIdSet.Count > 0 && seedIdSet.Count < seedRefs.Count)
-            _logger.Warn("Seed run: {0} of {1} seeds could not be resolved to library items.",
-                seedRefs.Count - seedIdSet.Count, seedRefs.Count);
+            _logger.Warn("Seed run ({0}): {1} of {2} seeds could not be resolved to library items.",
+                mode.MediaType, seedRefs.Count - seedIdSet.Count, seedRefs.Count);
 
         var generationCatalog = seedIdSet.Count > 0
             ? catalog.Where(t => !seedIdSet.Contains(t.Id)).ToList()
             : catalog;
         if (generationCatalog.Count == 0)
         {
-            _logger.Warn("Seed run: catalog empty after removing seeds — aborting.");
+            _logger.Warn("Seed run ({0}): catalog empty after removing seeds — aborting.", mode.MediaType);
             return false;
         }
 
         // 5. Seed-derived brief → shared pipeline (seeds excluded from catalog).
-        var promptBuilder = new PromptBuilder();
+        var promptBuilder = new PromptBuilder { IncludeCatalogDetails = mode.IncludeCatalogDetails };
         var prompt = promptBuilder.BuildSeedPrompt(seedRefs);
 
         var generator = new PlaylistGenerator(new LlmClient(), promptBuilder);
@@ -146,7 +160,7 @@ public sealed class SeedPipeline
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.ErrorException("Seed run: generation failed — seeds left in place for retry.", ex);
+            _logger.ErrorException($"Seed run ({mode.MediaType}): generation failed — seeds left in place for retry.", ex);
             return false; // keep seeds: never lose the user's picks on a failed run
         }
 
@@ -154,9 +168,9 @@ public sealed class SeedPipeline
 
         // 6. Result playlist (timestamped so batches never collide on names).
         var owner = ResolveOwner(config);
-        var name = $"{config.SeedResultName} {DateTime.Now:MM-dd HH:mm}";
+        var name = $"{mode.ResultName} {DateTime.Now:MM-dd HH:mm}";
         var creator = new PlaylistCreator(_playlistManager, _logger);
-        var playlistId = await creator.CreateAsync(name, result.PlaylistTracks, owner).ConfigureAwait(false);
+        var playlistId = await creator.CreateAsync(name, result.PlaylistTracks, owner, mode.MediaType).ConfigureAwait(false);
 
         progress?.Report(96);
 
@@ -166,11 +180,12 @@ public sealed class SeedPipeline
         if (config.SeedClearAfterRun)
         {
             var currentKeys = new HashSet<string>(
-                ReadSeedMetadata(config.SeedPlaylistName).Select(Key), StringComparer.OrdinalIgnoreCase);
+                ReadSeedMetadata(mode.PlaylistName).Select(Key), StringComparer.OrdinalIgnoreCase);
             var newSeeds = currentKeys.Count(k => !processedKeys.Contains(k));
             if (newSeeds > 0)
             {
-                _logger.Info("Seed run: {0} new seed(s) arrived during the run — keeping ALL seeds for the next batch.", newSeeds);
+                _logger.Info("Seed run ({0}): {1} new seed(s) arrived during the run — keeping ALL seeds for the next batch.",
+                    mode.MediaType, newSeeds);
             }
             else
             {
@@ -179,23 +194,23 @@ public sealed class SeedPipeline
                     _libraryManager.DeleteItem(seedPlaylist, new DeleteOptions { DeleteFileLocation = true });
                     await _playlistManager.CreatePlaylist(new PlaylistCreationRequest
                     {
-                        Name = config.SeedPlaylistName,
+                        Name = mode.PlaylistName,
                         ItemIdList = Array.Empty<long>(),
-                        MediaType = "Audio",
+                        MediaType = mode.MediaType,
                         User = owner,
                     }).ConfigureAwait(false);
                     cleared = seedRefs.Count;
                 }
                 catch (Exception ex)
                 {
-                    _logger.ErrorException("Seed run: could not clear seeds (playlist will re-trigger).", ex);
+                    _logger.ErrorException($"Seed run ({mode.MediaType}): could not clear seeds (playlist will re-trigger).", ex);
                 }
             }
         }
 
         _logger.Info(
-            "Seed run: created '{0}' ({1}) with {2} tracks from {3} seed(s); {4} cleared; {5} unmatched",
-            name, playlistId, result.Report.MatchedCount, seedRefs.Count, cleared, result.Report.UnmatchedCount);
+            "Seed run ({0}): created '{1}' ({2}) with {3} items from {4} seed(s); {5} cleared; {6} unmatched",
+            mode.MediaType, name, playlistId, result.Report.MatchedCount, seedRefs.Count, cleared, result.Report.UnmatchedCount);
 
         progress?.Report(100);
         return true;

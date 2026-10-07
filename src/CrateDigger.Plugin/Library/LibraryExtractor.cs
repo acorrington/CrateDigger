@@ -40,12 +40,19 @@ public sealed class LibraryExtractor
     /// </summary>
     internal static LibraryTrack MapItem(BaseItem item)
     {
-        // Artists live on the Audio subtype (IHasArtist / IHasAlbumArtist), not BaseItem.
+        // Artists live on subtypes: Audio (IHasArtist) and MusicVideo (declares Artists —
+        // Reel links downloaded videos to library artists, so this is populated for its
+        // installs). Both are string[]; BaseItem itself has none.
         string? artist = null;
-        if (item is Audio audio)
+        switch (item)
         {
-            artist = audio.Artists?.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a))
-                     ?? audio.AlbumArtists?.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a));
+            case Audio audio:
+                artist = audio.Artists?.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a))
+                         ?? audio.AlbumArtists?.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a));
+                break;
+            case MusicVideo musicVideo:
+                artist = musicVideo.Artists?.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a));
+                break;
         }
 
         artist ??= "Unknown Artist";
@@ -56,7 +63,8 @@ public sealed class LibraryExtractor
             artist.Trim(),
             item.Name.Trim(),
             string.IsNullOrWhiteSpace(item.Album) ? null : item.Album.Trim(),
-            genre);
+            genre,
+            item.ProductionYear);
 
         return new LibraryTrack(item.InternalId.ToString(), track);
     }

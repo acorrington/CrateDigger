@@ -66,7 +66,39 @@ public static class M3uSeedParser
                 entryTitle = fromFile.Value.Title;
             }
 
-            seeds.Add(new TrackRef(entryArtist ?? string.Empty, entryTitle ?? string.Empty));
+            // v0.3.0 (video m3u reality: NO #EXTART, titles often "Artist - Title ..."):
+            //  - no artist recorded -> split the title at the FIRST " - "
+            //  - artist recorded but title repeats it -> strip the "Artist - " prefix
+            //    (prevents "38 Special - 38 Special - Hold On Loosely" in prompts)
+            //  - no artist AND title begins with an artist prefix repeated in the
+            //    filename path -> strip the leading "Artist - " from the title
+            entryTitle = entryTitle ?? string.Empty;
+            entryArtist = entryArtist ?? string.Empty;
+            if (entryArtist.Length == 0)
+            {
+                var split = entryTitle.IndexOf(" - ", StringComparison.Ordinal);
+                if (split > 0 && split < entryTitle.Length - 3)
+                {
+                    entryArtist = entryTitle[..split].Trim();
+                    entryTitle = entryTitle[(split + 3)..].Trim();
+                }
+            }
+            else if (entryTitle.StartsWith(entryArtist + " - ", StringComparison.OrdinalIgnoreCase))
+            {
+                entryTitle = entryTitle[(entryArtist.Length + 3)..].Trim();
+            }
+
+            // Strip a leading "Artist - Artist - Title" double prefix:
+            // "Foreigner - Foreigner - I Want To Know..." -> "Foreigner - I Want To Know..."
+            var secondSplit = entryTitle.IndexOf(" - ", StringComparison.Ordinal);
+            if (entryArtist.Length > 0 &&
+                secondSplit > 0 &&
+                entryTitle[..secondSplit].Equals(entryArtist, StringComparison.OrdinalIgnoreCase))
+            {
+                entryTitle = entryTitle[(secondSplit + 3)..].Trim();
+            }
+
+            seeds.Add(new TrackRef(entryArtist, entryTitle));
             artist = null;
             title = null;
         }
