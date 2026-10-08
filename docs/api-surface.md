@@ -42,6 +42,7 @@ Sources of truth used during discovery:
 | 24 | Playlist change events | `IPlaylistManager.PlaylistItemsAdded/Removed/Moved` exist (subscribe from an entry point); **Added args carry ONLY `Playlist`** (no entry ids) while Removed/Moved also carry `ListItemEntryIds : Int64[]`. CrateDigger v0.2.1 debounces Added on the seed playlist: each add cancels+rearms a quiet-window timer (`SeedDebounceSeconds`, default 60), a shared `SemaphoreSlim` gate stops overlap with the interval backstop, and clear-step re-reads the m3u so seeds added mid-run are kept, never wiped | ✅ E2E |
 | 25 | MusicVideo items (v0.3.0) | `MediaBrowser.Controller.Entities.MusicVideo : Video` (NOT in `.Audio` namespace); declares `string[] Artists` (populated by Reel's artist-link); `BaseItem.ProductionYear` is `Nullable<int>`, `Tags`/`Studios` are `string[]`, **no `Directors` on BaseItem**. Video playlist m3u has **no `#EXTART`** — only `#EXTINF:title` + path; title is plain `Artist - Title` (e.g. `Foreigner - I Want To Know What Love Is (Remastered)`), parser splits at the first `" - "`. Playlist creation for videos needs `MediaType="Video"` (not `"Audio"`); two seed queues (audio + video) because Emby playlists are single-media-type | ✅ E2E: 34-item video playlist from 2 seeds |
 | 26 | **`Artist - Artist` in a title is usually artist + ALBUM, not a dup** | User correction: `Foreigner - Foreigner - I Want To Know…` = artist (Foreigner) → **album** (Foreigner, 1977 debut) → title. Verified against live data: stored titles never double the artist (`artist='Foreigner'`, `title='Foreigner - I Want To Know…'`) and the written m3u is plain `Artist - Title`. The apparent doubling in an earlier E2E report was a **display bug in my summary** (concatenated `artist + title`, and the title already carries the artist prefix — Reel's naming convention). **Do NOT add a "strip repeated artist segment" rule** — it would delete real album info when album == artist. Test `M3u_ArtistEqualsAlbum_NotStripped_PreservesBoth` guards this | ✅ live-verified |
+| 27 | First-run seed discovery + AI names (v0.3.1) | On `IServerEntryPoint.Run()`, CrateDigger **pre-creates any missing configured seed playlist** (empty, correct `MediaType`) so every client's "Add to playlist" picker shows it before the user knows the name — fixes the first-run gap where you had to know to create it. Defaults are now self-documenting verb-forward names (`🎵 CrateDigger – Add Songs Here` / `🎬 …Add Videos Here`). Result playlists use an **AI-generated name** from the same completion (prompt rule 4 + `PlaylistNameSanitizer` → folder-safe, capped, null→timestamp fallback, collision → append date), toggle `UseAiNames` (default on) | ✅ E2E: startup auto-created both queues; run produced `Midnight Synth Drive` (no timestamp) |
 
 ## Environment facts
 
@@ -57,7 +58,7 @@ Sources of truth used during discovery:
 
 | ID | Test | Result |
 |----|------|--------|
-| UT-001..NN | 66 unit tests (matcher, parser, prompts, payload, pipeline, m3u audio+video) | ✅ 66/66 |
+| UT-001..NN | 75 unit tests (matcher, parser, prompts, payload, pipeline, m3u audio+video, name sanitizer) | ✅ 75/75 |
 | ST-001 | POST `/CrateDigger/Create` without token | ✅ 401 |
 | ST-001b | GET `/CrateDigger/Status` without token | ✅ 401 (same guard) |
 | ST-002 | End-to-end generation (mock LLM): 2830-track library → artist shortlist → tracklist → fuzzy match → playlist | ✅ 5/5 matched, playlist `.m3u` written |
@@ -65,6 +66,7 @@ Sources of truth used during discovery:
 | ST-004 | Seed-playlist trigger E2E (v0.2.0): 2 seeds added via API → `POST /ScheduledTasks/Running/{Id}` → 265s run → 45-track "CrateDigger Radio 10-05 15:33", 0 unmatched, seeds cleared + playlist recreated | ✅ |
 | ST-005 | Debounce E2E (v0.2.1): add A → 6s → add B → timer re-armed (log proof), quiet window elapsed exactly 10.0s after **B** (not A), run gated against a concurrent interval-task tick ("already in progress"), result: 45 tracks, seeds cleared | ✅ |
 | ST-006 | Video seed E2E (v0.3.0): 2 MusicVideo seeds (38 Special) → `Seed run (Video)` → 34-item video playlist (Foreigner/KISS/Journey/Queen), `MediaType=Video`, seeds cleared; debounce+interval gate proved (double-trigger → one skipped); 11/45 unmatched honestly reported (videos Reel hasn't downloaded yet — production has no Reel yet, 0 MusicVideo items). Note: an earlier report showed `Foreigner - Foreigner - …` — that was a **display-concatenation bug in my summary**, not stored data; stored titles/m3u are clean `Artist - Title` (verified) | ✅ |
+| ST-007 | First-run + AI names E2E (v0.3.1): startup pre-created `🎵 …Add Songs Here` + `🎬 …Add Videos Here`; 2 seeds → model-named **`Midnight Synth Drive`** (no timestamp), 42 items, seeds cleared, 3 unmatched; both queues watched per tick (empty → clean no-op) | ✅ |
 
 ## LLM integration lessons (local/Unsloth servers)
 

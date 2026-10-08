@@ -30,11 +30,12 @@ builds a native Emby playlist.
 - 🎛 **Dashboard config page** — API key, endpoint, model, match threshold, playlist length
 - 💬 **Prompt box** — "Upbeat 80s synth music for working out"
 - 📡 **Seed-playlist trigger** — from *any* Emby app (phone, web, TV):
-  item → **⋯ → Add to playlist → your seed playlist**. Debounced since v0.2.1: generation
+  item → **⋯ → Add to playlist → your seed queue**. Debounced since v0.2.1: generation
   starts ~1 minute after your **last** add (each add resets the window — configurable);
-  a 3-minute scheduled task acts as backstop. Results land as a fresh timestamped playlist
-  and the queue empties itself. **Two queues** (v0.3.0): songs → `CrateDigger Seeds` (audio),
-  music videos → `CrateDigger Video Seeds` (video) — separate because Emby playlists are
+  a 3-minute scheduled task acts as backstop. Results land as a **self-named** playlist
+  (the model picks a short evocative name) and the queue empties itself. **Two queues**,
+  auto-created on first run (v0.3.1): songs → `🎵 CrateDigger – Add Songs Here`,
+  music videos → `🎬 CrateDigger – Add Videos Here` — separate because Emby playlists are
   single-media-type. Watch runs under **Dashboard → Scheduled Tasks → CrateDigger**.
 - 📊 **Live staged status** — *Analyzing library… → Thinking… → Matching tracks… → Creating playlist…*
 - 🧠 **Any OpenAI-compatible endpoint** — OpenAI, Ollama, LM Studio, OpenRouter, Unsloth
@@ -43,8 +44,13 @@ builds a native Emby playlist.
   one reinforced retry against flaky model output
 - 🪜 **Scales to big libraries** — ≤300 tracks embedded verbatim; larger libraries go through an
   artist-shortlist pass first, then a summary-based prompt
-- ✅ **66 unit tests** covering matching (UT-001), parser robustness (UT-002), prompts,
-  payload building, m3u seed parsing (audio + video), and the full pipeline against a fake LLM
+- ✅ **75 unit tests** covering matching (UT-001), parser robustness (UT-002), prompts,
+  payload building, m3u seed parsing (audio + video), name sanitizing, and the full
+  pipeline against a fake LLM
+- 🏷 **Self-naming playlists (v0.3.1)** — result playlists get a short AI-chosen name
+  (e.g. `Midnight Synth Drive`) from the same completion, with a timestamped fallback,
+  folder-safe sanitizing, and collision guard; seed queues are pre-created on startup
+  with self-documenting names (`🎵/🎬 CrateDigger – Add … Here`)
 - 🎬 **Music video mode (v0.3.0)** — same trigger for `MusicVideo` items; catalog enriched
   with year/genre when present; playlist created with `MediaType=Video`; works with videos
   downloaded by the Reel plugin (artist-linked, `Artist - Title` named)

@@ -59,7 +59,10 @@ public sealed class PromptBuilder
             "Rules:\n" +
             "1. Only use tracks that appear in the catalog above — never invent or approximate titles.\n" +
             $"2. Return up to {maxTracks} tracks ordered as the best openers first.\n" +
-            "3. Every track must exist in the catalog verbatim (artist and title spelling as given).";
+            "3. Every track must exist in the catalog verbatim (artist and title spelling as given).\n" +
+            "4. \"name\" is a short evocative playlist title (2-5 words, no quotes) that captures " +
+            "the mood/era of these picks — e.g. \"Midnight Synth Drive\", \"Backyard BBQ Burners\". " +
+            "Never a date, filename, or the words 'Untitled'.";
 
         return new LlmRequest(
             new LlmMessage("system", SystemRules),

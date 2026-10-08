@@ -1,3 +1,4 @@
+using CrateDigger.Core.Models;
 using MediaBrowser.Model.Plugins;
 
 namespace CrateDigger.Plugin.Configuration;
@@ -62,11 +63,15 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>Master switch for the scheduled seed task.</summary>
     public bool SeedTriggerEnabled { get; set; } = true;
 
-    /// <summary>Playlist the user adds seed songs to (created on demand in any client).</summary>
-    public string SeedPlaylistName { get; set; } = "CrateDigger Seeds";
+    /// <summary>
+    /// Playlist the user adds seed songs to. Self-documenting default (v0.3.1) — the
+    /// name appears verbatim in every client's "Add to playlist" picker, so it is the
+    /// instruction. Empty = audio queue disabled.
+    /// </summary>
+    public string SeedPlaylistName { get; set; } = PlaylistNames.SeedAudio;
 
-    /// <summary>Base name for generated results; a timestamp is appended per run.</summary>
-    public string SeedResultName { get; set; } = "CrateDigger Radio";
+    /// <summary>Fallback base name for generated results when AI naming is off/absent.</summary>
+    public string SeedResultName { get; set; } = PlaylistNames.ResultAudio;
 
     /// <summary>Remove seed entries after a successful run (one batch = one playlist).</summary>
     public bool SeedClearAfterRun { get; set; } = true;
@@ -89,8 +94,19 @@ public class PluginConfiguration : BasePluginConfiguration
     // ------------------------------------------------------------------
 
     /// <summary>Seed playlist for music videos (created on demand in any client).</summary>
-    public string SeedPlaylistNameVideo { get; set; } = "CrateDigger Video Seeds";
+    public string SeedPlaylistNameVideo { get; set; } = PlaylistNames.SeedVideo;
 
-    /// <summary>Base name for generated video results; timestamped per run.</summary>
-    public string SeedResultNameVideo { get; set; } = "CrateDigger Video Radio";
+    /// <summary>Fallback base name for generated video results when AI naming is off/absent.</summary>
+    public string SeedResultNameVideo { get; set; } = PlaylistNames.ResultVideo;
+
+    // ------------------------------------------------------------------
+    // AI-generated result names (v0.3.1)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Use the model's evocative playlist name (from the same completion we already
+    /// parse) instead of the timestamped fallback. Falls back automatically when the
+    /// name is missing/unusable, and de-dupes against existing playlists.
+    /// </summary>
+    public bool UseAiNames { get; set; } = true;
 }

@@ -3,6 +3,7 @@ using CrateDigger.Plugin.Configuration;
 using CrateDigger.Plugin.Tasks;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Playlists;
@@ -75,13 +76,13 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
     /// cache-busting query only reflects the SERVER version, so plugin updates keep the same
     /// URL and stale browser copies can linger. Bump these names (and the matching
     /// data-controller in configPage.html) on releases when cache issues appear.
-    /// Current generation: v8 (dual seed queues: audio + music video, v0.3.0).
+    /// Current generation: v9 (self-describing seed names, AI result names, startup auto-create — v0.3.1).
     /// </summary>
     public IEnumerable<PluginPageInfo> GetPages()
     {
         yield return new PluginPageInfo
         {
-            Name = "cratedigger8",
+            Name = "cratedigger9",
             DisplayName = "CrateDigger",
             EnableInMainMenu = true,
             MenuSection = "settings",
@@ -91,7 +92,7 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
 
         yield return new PluginPageInfo
         {
-            Name = "cratediggerjs8",
+            Name = "cratediggerjs9",
             EmbeddedResourcePath = GetType().Namespace + ".Resources.configPage.js",
         };
     }
@@ -118,6 +119,72 @@ public class CrateDiggerPlugin : BasePlugin<PluginConfiguration>, IHasWebPages, 
         // v0.2.1: event-driven seed runs — generation starts after a quiet window
         // that RESETS on every add (classic debounce); the interval task is backstop.
         _playlistManager.PlaylistItemsAdded += OnPlaylistItemsAdded;
+
+        // v0.3.1: pre-create the seed queues so every client's "Add to playlist"
+        // picker already lists them — first-run users shouldn't have to know the name.
+        try
+        {
+            EnsureSeedPlaylists();
+        }
+        catch (Exception ex)
+        {
+            _logger.ErrorException("CrateDigger: could not pre-create seed playlists.", ex);
+        }
+    }
+
+    /// <summary>
+    /// Create any missing configured seed playlist (empty, correct media type) so the
+    /// queue is discoverable on first run. Idempotent; skips disabled (empty-named) queues
+    /// and never touches an existing playlist. Runs off the startup path via the task's
+    /// first interval tick as a backstop if this fails.
+    /// </summary>
+    private void EnsureSeedPlaylists()
+    {
+        var config = Configuration;
+        foreach (var mode in SeedMode.GetModes(config))
+        {
+            var exists = _libraryManager.GetItemList(new InternalItemsQuery
+            {
+                IncludeItemTypes = new[] { "Playlist" },
+                Name = mode.PlaylistName,
+                Recursive = true,
+            }).Any(p => string.Equals(p.Name?.Trim(), mode.PlaylistName, StringComparison.OrdinalIgnoreCase));
+
+            if (exists)
+                continue;
+
+            var owner = ResolveOwnerUser(config);
+            if (owner == null)
+            {
+                _logger.Warn("CrateDigger: no user available to own seed playlist '{0}' — skipping auto-create.", mode.PlaylistName);
+                continue;
+            }
+
+            var id = _playlistManager.CreatePlaylist(new PlaylistCreationRequest
+            {
+                Name = mode.PlaylistName,
+                ItemIdList = Array.Empty<long>(),
+                MediaType = mode.MediaType,
+                User = owner,
+            }).GetAwaiter().GetResult().Id;
+
+            _logger.Info("CrateDigger: pre-created seed playlist '{0}' ({1}) — ready for adds.",
+                mode.PlaylistName, id);
+        }
+    }
+
+    /// <summary>Owner for auto-created queues: config value, else first user.</summary>
+    private MediaBrowser.Controller.Entities.User? ResolveOwnerUser(PluginConfiguration config)
+    {
+        if (Guid.TryParse(config.OwnerUserId, out var configured) && configured != Guid.Empty)
+        {
+            var byConfig = _userManager.GetUserById(configured);
+            if (byConfig != null)
+                return byConfig;
+        }
+
+        var users = _userManager.GetUserList(new MediaBrowser.Model.Querying.UserQuery());
+        return users is { Length: > 0 } ? users[0] : null;
     }
 
     /// <summary>

@@ -333,4 +333,29 @@ public class ResponseParserTests
         Assert.Equal("Foreigner", s.Artist);
         Assert.Equal("I Want To Know What Love Is (Remastered)", s.Title);
     }
+
+    // ------------------------------------------------------------------
+    // Name sanitizer (v0.3.1 — AI result names land in folder paths)
+    // ------------------------------------------------------------------
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    [InlineData("   ", null)]
+    [InlineData("///???", null)]          // only invalid chars -> unusable
+    [InlineData("Midnight Synth Drive", "Midnight Synth Drive")]
+    [InlineData("  Backyard  BBQ\nBurners ", "Backyard BBQ Burners")]  // collapse ws/newlines
+    [InlineData("My Mix: Vol/1", "My Mix Vol 1")]                      // strip path/colon chars
+    public void Sanitize_HandlesRealModelOutputs(string? input, string? expected)
+    {
+        Assert.Equal(expected, CrateDigger.Core.Models.PlaylistNameSanitizer.Sanitize(input));
+    }
+
+    [Fact]
+    public void Sanitize_CapsLength()
+    {
+        var longName = new string('a', 200);
+        var result = CrateDigger.Core.Models.PlaylistNameSanitizer.Sanitize(longName);
+        Assert.Equal(CrateDigger.Core.Models.PlaylistNameSanitizer.MaxLength, result!.Length);
+    }
 }

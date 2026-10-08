@@ -166,9 +166,10 @@ public sealed class SeedPipeline
 
         progress?.Report(88);
 
-        // 6. Result playlist (timestamped so batches never collide on names).
+        // 6. Result playlist name: AI-generated when enabled (v0.3.1), else timestamped.
+        //    Fallback keeps a batch unique; collision guard appends the date.
         var owner = ResolveOwner(config);
-        var name = $"{mode.ResultName} {DateTime.Now:MM-dd HH:mm}";
+        var name = ResolveResultName(config, mode, result);
         var creator = new PlaylistCreator(_playlistManager, _logger);
         var playlistId = await creator.CreateAsync(name, result.PlaylistTracks, owner, mode.MediaType).ConfigureAwait(false);
 
@@ -218,6 +219,38 @@ public sealed class SeedPipeline
 
     /// <summary>Seed identity for m3u diffing: "artist - title".</summary>
     private static string Key(TrackRef t) => $"{t.Artist} - {t.Title}";
+
+    /// <summary>
+    /// Result playlist name (v0.3.1): prefer the model's evocative name when AI naming
+    /// is on and it sanitizes to something usable; otherwise the timestamped base name.
+    /// Then de-dupe against existing playlists so a run never silently overwrites/merges.
+    /// </summary>
+    private string ResolveResultName(PluginConfiguration config, SeedMode mode, GenerationResult result)
+    {
+        var candidate = config.UseAiNames ? PlaylistNameSanitizer.Sanitize(result.PlaylistName) : null;
+        var name = candidate ?? $"{mode.ResultName} {DateTime.Now:MM-dd HH:mm}";
+
+        // Collision guard: if a playlist with this name exists, append the date.
+        if (PlaylistNameExists(name))
+        {
+            var dated = $"{name} ({DateTime.Now:MM-dd})";
+            if (PlaylistNameExists(dated))
+                dated = $"{name} ({DateTime.Now:MM-dd HH:mm})";
+            name = dated;
+        }
+
+        if (candidate != null)
+            _logger.Info("Seed run ({0}): AI-named playlist '{1}'", mode.MediaType, name);
+        return name;
+    }
+
+    private bool PlaylistNameExists(string name)
+        => _libraryManager.GetItemList(new InternalItemsQuery
+        {
+            IncludeItemTypes = new[] { "Playlist" },
+            Name = name,
+            Recursive = true,
+        }).Length > 0;
 
     /// <summary>LLM options — from the live plugin configuration (falling back to defaults).</summary>
     private static LlmOptions BuildLlmOptions(PluginConfiguration config) => new()

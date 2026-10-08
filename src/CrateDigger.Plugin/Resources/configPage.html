@@ -1,4 +1,4 @@
-<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/cratediggerjs8" data-title="CrateDigger">
+<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/cratediggerjs9" data-title="CrateDigger">
     <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page">
 
         <div class="verticalSection">
@@ -69,8 +69,8 @@
                 <b>⋯ → Add to playlist → your seed playlist</b>. After a quiet window the
                 scheduled task turns the seeds into a fresh playlist and empties the queue.
                 Two queues exist because Emby playlists are single-type:
-                <b>songs → <span class="cdSeedNameEcho">CrateDigger Seeds</span></b> (audio),
-                <b>videos → <span class="cdSeedNameVideoEcho">CrateDigger Video Seeds</span></b> (music videos).
+                <b>songs → <span class="cdSeedNameEcho">🎵 CrateDigger – Add Songs Here</span></b> (audio),
+                <b>videos → <span class="cdSeedNameVideoEcho">🎬 CrateDigger – Add Videos Here</span></b> (music videos).
                 Status shows under <b>Dashboard → Scheduled Tasks → CrateDigger</b>.
             </div>
 
@@ -80,7 +80,7 @@
             </label>
 
             <div class="inputContainer">
-                <input is="emby-input" type="text" class="cdSeedName" label="Seed playlist name" autocomplete="off" />
+                <input is="emby-input" type="text" class="cdSeedName" label="Audio seed playlist name (empty = off)" autocomplete="off" />
             </div>
 
             <div class="inputContainer">
@@ -100,6 +100,11 @@
             <label class="emby-checkbox-label" style="display:flex;align-items:center;margin:.6em 0;">
                 <input type="checkbox" is="emby-checkbox" class="cdSeedClear" />
                 <span>Clear seeds after each successful run</span>
+            </label>
+
+            <label class="emby-checkbox-label" style="display:flex;align-items:center;margin:.6em 0;">
+                <input type="checkbox" is="emby-checkbox" class="cdAiNames" />
+                <span>Let the AI name generated playlists (falls back to a timestamp)</span>
             </label>
 
             <label class="emby-checkbox-label" style="display:flex;align-items:center;margin:.6em 0;">

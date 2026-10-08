@@ -91,8 +91,9 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             config.LlmExtraJson = (view.querySelector('.cdExtraJson').value || '').trim();
             // seed trigger settings (v0.2.0)
             config.SeedTriggerEnabled = view.querySelector('.cdSeedEnabled').checked;
-            config.SeedPlaylistName = (view.querySelector('.cdSeedName').value || '').trim() || 'CrateDigger Seeds';
+            config.SeedPlaylistName = (view.querySelector('.cdSeedName').value || '').trim() || '\uD83C\uDFB5 CrateDigger \u2013 Add Songs Here';
             config.SeedResultName = (view.querySelector('.cdSeedResult').value || '').trim() || 'CrateDigger Radio';
+            config.UseAiNames = view.querySelector('.cdAiNames').checked;
             config.SeedClearAfterRun = view.querySelector('.cdSeedClear').checked;
             config.SeedDebounceEnabled = view.querySelector('.cdSeedDebounce').checked;
             config.SeedDebounceSeconds = parseInt(view.querySelector('.cdSeedDebounceSec').value, 10) || 60;
@@ -134,18 +135,19 @@ define(['baseView', 'loading', 'responseHelper', 'emby-input', 'emby-button'], f
             view.querySelector('.cdTimeout').value = config.LlmTimeoutSeconds || 300;
             // seed trigger settings (v0.2.0)
             view.querySelector('.cdSeedEnabled').checked = config.SeedTriggerEnabled !== false;
-            view.querySelector('.cdSeedName').value = config.SeedPlaylistName || 'CrateDigger Seeds';
+            view.querySelector('.cdSeedName').value = config.SeedPlaylistName || '\uD83C\uDFB5 CrateDigger \u2013 Add Songs Here';
             view.querySelector('.cdSeedResult').value = config.SeedResultName || 'CrateDigger Radio';
+            view.querySelector('.cdAiNames').checked = config.UseAiNames !== false;
             view.querySelector('.cdSeedClear').checked = config.SeedClearAfterRun !== false;
             view.querySelector('.cdSeedDebounce').checked = config.SeedDebounceEnabled !== false;
             view.querySelector('.cdSeedDebounceSec').value = config.SeedDebounceSeconds || 60;
             // music video queue (v0.3.0)
-            view.querySelector('.cdSeedNameVideo').value = config.SeedPlaylistNameVideo || 'CrateDigger Video Seeds';
+            view.querySelector('.cdSeedNameVideo').value = config.SeedPlaylistNameVideo || '\uD83C\uDFAC CrateDigger \u2013 Add Videos Here';
             view.querySelector('.cdSeedResultVideo').value = config.SeedResultNameVideo || 'CrateDigger Video Radio';
             var echoV = view.querySelector('.cdSeedNameVideoEcho');
-            if (echoV) echoV.textContent = view.querySelector('.cdSeedNameVideo').value || 'CrateDigger Video Seeds';
+            if (echoV) echoV.textContent = view.querySelector('.cdSeedNameVideo').value || '\uD83C\uDFAC CrateDigger \u2013 Add Videos Here';
             var echo = view.querySelector('.cdSeedNameEcho');
-            if (echo) echo.textContent = view.querySelector('.cdSeedName').value || 'CrateDigger Seeds';
+            if (echo) echo.textContent = view.querySelector('.cdSeedName').value || '\uD83C\uDFB5 CrateDigger \u2013 Add Songs Here';
             view.querySelector('.cdMaxTokens').value = typeof config.LlmMaxTokens === 'number' ? config.LlmMaxTokens : 16384;
             view.querySelector('.cdExtraJson').value = config.LlmExtraJson || '';
         }, responseHelper.handleErrorResponse);
