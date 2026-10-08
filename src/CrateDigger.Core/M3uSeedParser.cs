@@ -24,6 +24,7 @@ public static class M3uSeedParser
 
         string? artist = null;
         string? title = null;
+        string? album = null;
 
         foreach (var rawLine in lines)
         {
@@ -34,6 +35,12 @@ public static class M3uSeedParser
             if (line.StartsWith("#EXTART:", StringComparison.OrdinalIgnoreCase))
             {
                 artist = line[8..].Trim();
+                continue;
+            }
+
+            if (line.StartsWith("#EXTALB:", StringComparison.OrdinalIgnoreCase))
+            {
+                album = line[8..].Trim();
                 continue;
             }
 
@@ -48,11 +55,12 @@ public static class M3uSeedParser
             }
 
             if (line.StartsWith('#'))
-                continue; // #EXTM3U / #PLAYLIST / #EXTALB / comments
+                continue; // #EXTM3U / #PLAYLIST / comments
 
             // Path line completes one entry.
             var entryTitle = title;
             var entryArtist = artist;
+            var entryAlbum = album;
             if (string.IsNullOrWhiteSpace(entryTitle))
             {
                 var fromFile = TrackRefFromFileName(line);
@@ -60,47 +68,54 @@ public static class M3uSeedParser
                 {
                     artist = null;
                     title = null;
+                    album = null;
                     continue; // unparseable — skip entry
                 }
                 entryArtist = fromFile.Value.Artist;
                 entryTitle = fromFile.Value.Title;
             }
 
-            // v0.3.0 (video m3u reality: NO #EXTART, titles often "Artist - Title ..."):
-            //  - no artist recorded -> split the title at the FIRST " - "
-            //  - artist recorded but title repeats it -> strip the "Artist - " prefix
-            //    (prevents "38 Special - 38 Special - Hold On Loosely" in prompts)
-            //  - no artist AND title begins with an artist prefix repeated in the
-            //    filename path -> strip the leading "Artist - " from the title
             entryTitle = entryTitle ?? string.Empty;
             entryArtist = entryArtist ?? string.Empty;
+            entryAlbum = entryAlbum ?? string.Empty;
+
+            // Video m3u has NO #EXTART: the EXTINF title is "Artist - Title" (or
+            // "Artist - Album - Title"). Split at the FIRST " - " for the artist and
+            // leave the remainder as the title.
+            //
+            // IMPORTANT: do NOT strip a repeated "Artist -" segment from the title.
+            // When title = "Foreigner - Foreigner - I Want To Know What Love Is",
+            // segment 1 is the artist and segment 2 is the ALBUM (Foreigner's 1977
+            // debut), not the artist said twice — stripping it would destroy real
+            // album information. The real Emby video m3u writes plain "Artist - Title"
+            // (#EXTINF:Foreigner - I Want To Know What Love Is) and splits cleanly on
+            // the first " - ", so no dedup pass is needed here.
+            entryTitle = entryTitle ?? string.Empty;
+            entryArtist = entryArtist ?? string.Empty;
+            entryAlbum = entryAlbum ?? string.Empty;
+
             if (entryArtist.Length == 0)
             {
-                var split = entryTitle.IndexOf(" - ", StringComparison.Ordinal);
-                if (split > 0 && split < entryTitle.Length - 3)
+                var first = entryTitle.IndexOf(" - ", StringComparison.Ordinal);
+                if (first > 0 && first < entryTitle.Length - 3)
                 {
-                    entryArtist = entryTitle[..split].Trim();
-                    entryTitle = entryTitle[(split + 3)..].Trim();
+                    entryArtist = entryTitle[..first].Trim();
+                    entryTitle = entryTitle[(first + 3)..].Trim();
                 }
             }
             else if (entryTitle.StartsWith(entryArtist + " - ", StringComparison.OrdinalIgnoreCase))
             {
+                // EXTART present but EXTINF repeats the artist prefix — strip it.
                 entryTitle = entryTitle[(entryArtist.Length + 3)..].Trim();
             }
 
-            // Strip a leading "Artist - Artist - Title" double prefix:
-            // "Foreigner - Foreigner - I Want To Know..." -> "Foreigner - I Want To Know..."
-            var secondSplit = entryTitle.IndexOf(" - ", StringComparison.Ordinal);
-            if (entryArtist.Length > 0 &&
-                secondSplit > 0 &&
-                entryTitle[..secondSplit].Equals(entryArtist, StringComparison.OrdinalIgnoreCase))
-            {
-                entryTitle = entryTitle[(secondSplit + 3)..].Trim();
-            }
-
-            seeds.Add(new TrackRef(entryArtist, entryTitle));
+            seeds.Add(new TrackRef(
+                entryArtist,
+                entryTitle,
+                string.IsNullOrWhiteSpace(entryAlbum) ? null : entryAlbum));
             artist = null;
             title = null;
+            album = null;
         }
 
         return seeds;

@@ -294,14 +294,37 @@ public class ResponseParserTests
     }
 
     [Fact]
-    public void M3u_DoubleArtistPrefix_StripsDuplicate()
+    public void M3u_ArtistEqualsAlbum_NotStripped_PreservesBoth()
     {
-        // Real production case: "Foreigner - Foreigner - I Want To Know What Love Is"
+        // Your correction: "Foreigner - Foreigner - I Want To Know What Love Is"
+        // = artist (Foreigner) -> ALBUM (Foreigner, 1977 debut) -> title. Segment 2
+        // is the album, NOT a duplicate artist, so it must NOT be stripped.
         var lines = new[]
         {
             "#EXTM3U",
             "#EXTINF:293,Foreigner - Foreigner - I Want To Know What Love Is (Remastered)",
             @"E:\Emby Server\Music Videos\Foreigner - I Want To Know What Love Is.mp4",
+        };
+
+        var seeds = CrateDigger.Core.M3uSeedParser.ParseSeeds(lines);
+
+        var s = Assert.Single(seeds);
+        Assert.Equal("Foreigner", s.Artist);
+        // Title keeps all segments after the artist (album lives here in the title text).
+        Assert.StartsWith("Foreigner - I Want To Know What Love Is", s.Title);
+    }
+
+    [Fact]
+    public void M3u_VideoRadioRealEntry_SplitsCleanOnFirstDash()
+    {
+        // Verbatim from Emby's generated video playlist m3u — plain "Artist - Title",
+        // no double artist at all (proves the strip rule was solving a non-problem).
+        var lines = new[]
+        {
+            "#EXTM3U",
+            "#PLAYLIST:CrateDigger Video Radio 10-07 16:48",
+            "#EXTINF:300,Foreigner - I Want To Know What Love Is (Remastered)",
+            @"E:\Emby Server\Music Videos\Foreigner - I Want To Know What Love Is (Remastered).mp4",
         };
 
         var seeds = CrateDigger.Core.M3uSeedParser.ParseSeeds(lines);
